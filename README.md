@@ -93,13 +93,18 @@ before the weekend.
 
 ## Notes
 
-- Switching the Day 1/Day 2 tab slides the dashboard content in from the
-  right or left depending on direction. `/day/1` and `/day/2` match the same
-  route, so React Router re-renders `Dashboard` instead of remounting it —
-  the animation is plain CSS, keyed on `day` so it replays on every switch,
-  with a ref (not state) tracking the previous day so the direction is
-  correct on the very render the key changes. The very first render never
-  animates, and it respects `prefers-reduced-motion`.
+- Switching the Day 1/Day 2 tab animates in two layered ways rather than one
+  blunt transition. The hero card itself never moves — its background photo
+  crossfades (a settled layer underneath, a new one fading in on top, then
+  promoted to settled once the fade finishes so the next switch has a clean
+  base) and its course name/competition type/prize badge each fade via a
+  `key`-triggered CSS animation. The leaderboard list underneath is the part
+  that actually slides, entering from the right or left depending on
+  direction. All of it relies on `/day/1` and `/day/2` matching the same
+  route, so React Router re-renders `Dashboard` instead of remounting it; a
+  ref (not state) tracks the previous day so the slide direction is correct
+  on the very render the key changes. The first render never animates
+  anything, and everything respects `prefers-reduced-motion`.
 - Score entry writes optimistically to the UI, then to Supabase; the
   leaderboard subscribes to `scores` changes over Supabase Realtime and
   recomputes on every insert/update. A "Live · Refresh" button is a manual

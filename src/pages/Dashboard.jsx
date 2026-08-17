@@ -64,9 +64,29 @@ export default function Dashboard() {
   const type = competition?.type || (day === '2' ? 'scramble_stableford' : 'singles_stableford')
   const compType = type === 'scramble_stableford' ? 'Scramble Stableford' : 'Singles Stableford'
 
-  const photoUrl = competition?.courses?.photo_url
+  const photoUrl = competition?.courses?.photo_url ?? null
   const prize = competition?.prize_money
   const prizeLabel = prize ? (day === '2' ? `€${prize}pp` : `€${prize}`) : null
+
+  // The hero card itself never moves — only its background photo crossfades.
+  // A settled layer (bgUrl) sits underneath at full opacity; when the photo
+  // changes, the new one is layered on top and fades in, then gets promoted
+  // to the settled layer once the fade finishes so the next change has a
+  // clean base to fade from again.
+  const [bgUrl, setBgUrl] = useState(photoUrl)
+  const [fadingBgUrl, setFadingBgUrl] = useState(null)
+  const bgFadeTimer = useRef(null)
+
+  useEffect(() => {
+    if (photoUrl === bgUrl) return
+    setFadingBgUrl(photoUrl)
+    clearTimeout(bgFadeTimer.current)
+    bgFadeTimer.current = setTimeout(() => {
+      setBgUrl(photoUrl)
+      setFadingBgUrl(null)
+    }, 380)
+    return () => clearTimeout(bgFadeTimer.current)
+  }, [photoUrl, bgUrl])
 
   return (
     <div className="app-shell">
@@ -93,27 +113,39 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      <div className="dashboard-hero">
+        {bgUrl && <div className="dashboard-hero-bg" style={{ backgroundImage: `url(${bgUrl})` }} />}
+        {fadingBgUrl && (
+          <div key={fadingBgUrl} className="dashboard-hero-bg dashboard-hero-bg-fade-in" style={{ backgroundImage: `url(${fadingBgUrl})` }} />
+        )}
+        <div className="dashboard-hero-scrim" />
+        <div className="dashboard-hero-content">
+          <div className="dashboard-kicker">Donegal Golf Weekend</div>
+          <h1 className="dashboard-title">Leaderboard</h1>
+
+          <div className="dashboard-meta">
+            <div>
+              <div key={`course-${day}`} className="dashboard-course fade-text">
+                {competition?.courses?.name || `Day ${day} Course`}
+              </div>
+              <div key={`type-${day}`} className="dashboard-comp-type fade-text">
+                {compType}
+              </div>
+              {prizeLabel && (
+                <div key={`prize-${day}`} className="prize-badge fade-text">
+                  🏆 {prizeLabel}
+                </div>
+              )}
+            </div>
+            <button className="live-dot refresh-btn" onClick={refresh} disabled={refreshing} aria-label="Refresh">
+              {refreshing ? 'Refreshing…' : 'Live · Refresh'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="dashboard-slide-viewport">
         <div key={day} className={`dashboard-slide-panel${direction ? ` slide-${direction}` : ''}`}>
-          <div className="dashboard-hero" style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : undefined}>
-            <div className="dashboard-hero-scrim" />
-            <div className="dashboard-hero-content">
-              <div className="dashboard-kicker">Donegal Golf Weekend</div>
-              <h1 className="dashboard-title">Leaderboard</h1>
-
-              <div className="dashboard-meta">
-                <div>
-                  <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
-                  <div className="dashboard-comp-type">{compType}</div>
-                  {prizeLabel && <div className="prize-badge">🏆 {prizeLabel}</div>}
-                </div>
-                <button className="live-dot refresh-btn" onClick={refresh} disabled={refreshing} aria-label="Refresh">
-                  {refreshing ? 'Refreshing…' : 'Live · Refresh'}
-                </button>
-              </div>
-            </div>
-          </div>
-
           {state.status === 'loading' && <div className="state-message">Loading leaderboard…</div>}
 
           {state.status === 'error' && (
