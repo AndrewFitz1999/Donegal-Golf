@@ -101,6 +101,11 @@ before the weekend.
 - Player and team photos are downscaled client-side (max 512px) before upload
   to keep it fast on course wifi. A team photo, once set, replaces its two
   players' individual avatars everywhere the team is shown.
+- Each day/course can have a background photo (Setup → Courses), downscaled
+  to max 1600px, shown behind that day's dashboard header/tabs with a black
+  overlay for legibility. Falls back to the plain green gradient when unset.
+- Scorecard scores are color-coded: under par red, par neutral, bogey blue,
+  double bogey or worse dark navy.
 - Day 2 teams are displayed as `PlayerA/PlayerB`, derived automatically from
   whichever two players are assigned to the team in Setup.
 - The leaderboard ranks by points with proper tie handling — players/teams

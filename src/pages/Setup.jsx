@@ -6,6 +6,7 @@ import {
   getHoles,
   updateCourseName,
   updateHole,
+  uploadCoursePhoto,
   getPlayers,
   updatePlayer,
   uploadPlayerPhoto,
@@ -56,6 +57,7 @@ function CoursesTab({ onSave }) {
   const [holes, setHoles] = useState([])
   const [name, setName] = useState('')
   const [status, setStatus] = useState('loading')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   useEffect(() => {
     getCourses()
@@ -90,8 +92,25 @@ function CoursesTab({ onSave }) {
     onSave()
   }
 
+  async function handlePhotoChange(file) {
+    if (!file || !activeCourseId) return
+    setUploadingPhoto(true)
+    try {
+      const resized = await resizeImageFile(file, { maxDim: 1600, quality: 0.85 })
+      const photoUrl = await uploadCoursePhoto(activeCourseId, resized)
+      setCourses((prev) => prev.map((c) => (c.id === activeCourseId ? { ...c, photo_url: photoUrl } : c)))
+      onSave()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   if (status === 'loading') return <div className="state-message">Loading courses…</div>
   if (status === 'error') return <div className="state-message">Couldn't load courses. Check your connection.</div>
+
+  const activeCourse = courses.find((c) => c.id === activeCourseId)
 
   return (
     <div>
@@ -111,6 +130,22 @@ function CoursesTab({ onSave }) {
         <div className="field">
           <label>Course name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} onBlur={saveName} placeholder="e.g. Rosapenna" />
+        </div>
+
+        <div className="field">
+          <label>Background photo</label>
+          <label className="course-photo-picker">
+            {activeCourse?.photo_url && (
+              <>
+                <img src={activeCourse.photo_url} alt="" />
+                <div className="course-photo-scrim" />
+              </>
+            )}
+            <span className={`course-photo-label${activeCourse?.photo_url ? ' has-photo' : ''}`}>
+              {uploadingPhoto ? 'Uploading…' : activeCourse?.photo_url ? 'Change photo' : 'Add a photo of the course'}
+            </span>
+            <input type="file" accept="image/*" disabled={uploadingPhoto} onChange={(e) => handlePhotoChange(e.target.files?.[0])} />
+          </label>
         </div>
 
         <div className="holes-grid">

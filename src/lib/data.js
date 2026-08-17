@@ -26,6 +26,19 @@ export async function updateHole(holeId, fields) {
   if (error) throw error
 }
 
+export async function uploadCoursePhoto(courseId, blob) {
+  const path = `courses/${courseId}-${Date.now()}.jpg`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const { error } = await supabase.from('courses').update({ photo_url: data.publicUrl }).eq('id', courseId)
+  if (error) throw error
+  return data.publicUrl
+}
+
 export async function getPlayers() {
   const { data, error } = await supabase.from('players').select('*').order('created_at')
   if (error) throw error

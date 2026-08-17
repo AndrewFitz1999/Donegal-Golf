@@ -1,5 +1,5 @@
 // Downscales an image file client-side before upload, so a full-res phone
-// photo doesn't get shipped over patchy course wifi for a tiny avatar.
+// photo doesn't get shipped over patchy course wifi.
 export function resizeImageFile(file, { maxDim = 512, quality = 0.85 } = {}) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)

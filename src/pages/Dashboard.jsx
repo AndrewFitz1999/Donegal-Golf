@@ -45,32 +45,39 @@ export default function Dashboard() {
   const type = competition?.type || (day === '2' ? 'scramble_stableford' : 'singles_stableford')
   const compType = type === 'scramble_stableford' ? 'Scramble Stableford' : 'Singles Stableford'
 
+  const photoUrl = competition?.courses?.photo_url
+
   return (
     <div className="app-shell">
-      <div className="dashboard-header">
-        <div>
-          <div className="dashboard-kicker">Donegal Golf Weekend</div>
-          <h1 className="dashboard-title">Leaderboard</h1>
-        </div>
-        <Link to="/setup" className="dashboard-setup-link" aria-label="Setup">
-          ⚙
-        </Link>
-      </div>
+      <div className="dashboard-hero" style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : undefined}>
+        <div className="dashboard-hero-scrim" />
+        <div className="dashboard-hero-content">
+          <div className="dashboard-header">
+            <div>
+              <div className="dashboard-kicker">Donegal Golf Weekend</div>
+              <h1 className="dashboard-title">Leaderboard</h1>
+            </div>
+            <Link to="/setup" className="dashboard-setup-link" aria-label="Setup">
+              ⚙
+            </Link>
+          </div>
 
-      <div className="tabs dashboard-tabs">
-        {[1, 2].map((d) => (
-          <Link key={d} to={`/day/${d}`} className={`tab-btn${String(d) === day ? ' is-active' : ''}`}>
-            Day {d} · {DAY_LABEL[d]}
-          </Link>
-        ))}
-      </div>
+          <div className="tabs dashboard-tabs">
+            {[1, 2].map((d) => (
+              <Link key={d} to={`/day/${d}`} className={`tab-btn${String(d) === day ? ' is-active' : ''}`}>
+                Day {d} · {DAY_LABEL[d]}
+              </Link>
+            ))}
+          </div>
 
-      <div className="dashboard-meta">
-        <div>
-          <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
-          <div className="dashboard-comp-type">{compType}</div>
+          <div className="dashboard-meta">
+            <div>
+              <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
+              <div className="dashboard-comp-type">{compType}</div>
+            </div>
+            <span className="live-dot">Live</span>
+          </div>
         </div>
-        <span className="live-dot">Live</span>
       </div>
 
       <div className="page-content">

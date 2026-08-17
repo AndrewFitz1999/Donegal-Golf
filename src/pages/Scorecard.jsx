@@ -123,15 +123,13 @@ function ScorecardNine({ title, rows }) {
           <div>Hole</div>
           <div>Par</div>
           <div>Score</div>
-          <div>+/−</div>
           <div>Pts</div>
         </div>
         {rows.map((r) => (
           <div className="scorecard-grid" key={r.hole}>
             <div className="scorecard-hole-num">{r.hole}</div>
             <div>{r.par}</div>
-            <div>{r.gross ?? '–'}</div>
-            <div>{r.gross != null ? relativeToPar(r.gross, r.par) : '–'}</div>
+            <div className={r.gross != null ? scoreClass(r.gross, r.par) : ''}>{r.gross ?? '–'}</div>
             <div className="scorecard-pts">{r.points ?? '–'}</div>
           </div>
         ))}
@@ -139,7 +137,6 @@ function ScorecardNine({ title, rows }) {
           <div>Total</div>
           <div>{totalPar}</div>
           <div>{anyGross ? totalGross : '–'}</div>
-          <div></div>
           <div className="scorecard-pts">{totalPoints}</div>
         </div>
       </div>
@@ -147,8 +144,11 @@ function ScorecardNine({ title, rows }) {
   )
 }
 
-function relativeToPar(gross, par) {
+// birdie or better = red, par = neutral, bogey = blue, double bogey or worse = dark blue
+function scoreClass(gross, par) {
   const diff = gross - par
-  if (diff === 0) return 'E'
-  return diff > 0 ? `+${diff}` : `${diff}`
+  if (diff <= -1) return 'score-under'
+  if (diff === 1) return 'score-bogey'
+  if (diff >= 2) return 'score-double'
+  return ''
 }
