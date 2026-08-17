@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Setup from './pages/Setup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import DayScorer from './pages/DayScorer.jsx'
+import Scorecard from './pages/Scorecard.jsx'
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Route path="/setup" element={<Setup />} />
       <Route path="/day/:day" element={<Dashboard />} />
       <Route path="/day/:day/score" element={<DayScorer />} />
+      <Route path="/day/:day/scorecard/:entrantId" element={<Scorecard />} />
     </Routes>
   )
 }

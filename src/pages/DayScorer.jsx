@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import TopBar from '../components/TopBar.jsx'
-import Avatar, { AvatarPair } from '../components/Avatar.jsx'
+import { EntrantAvatar } from '../components/Avatar.jsx'
 import { getCompetition, getHoles, getScores, upsertScore, subscribeToScores } from '../lib/data'
 import { loadEntrants } from '../lib/entrants'
 import { stablefordPoints } from '../lib/scoring'
@@ -40,11 +40,14 @@ export default function DayScorer() {
   useEffect(() => {
     if (!competition) return
     const unsubscribe = subscribeToScores(competition.id, (payload) => {
+      if (payload.eventType === 'DELETE') return
+      const row = payload.new
+      if (!row) return
+      // Match on entrant_id+hole_number, not id: an optimistic row written
+      // locally has no id yet, so matching by id would miss it and append a
+      // duplicate instead of reconciling with the server's version.
       setScores((prev) => {
-        const row = payload.new?.id ? payload.new : null
-        if (payload.eventType === 'DELETE') return prev
-        if (!row) return prev
-        const idx = prev.findIndex((s) => s.id === row.id)
+        const idx = prev.findIndex((s) => s.entrant_id === row.entrant_id && s.hole_number === row.hole_number)
         if (idx === -1) return [...prev, row]
         const next = [...prev]
         next[idx] = row
@@ -57,6 +60,9 @@ export default function DayScorer() {
   useEffect(() => {
     sessionStorage.setItem(`scorer-hole-${day}`, String(hole))
   }, [day, hole])
+
+  const scoresRef = useRef(scores)
+  scoresRef.current = scores
 
   const currentHole = holes.find((h) => h.hole_number === hole)
 
@@ -79,10 +85,16 @@ export default function DayScorer() {
 
   const allFilledCurrentHole = filledHoles.has(hole)
 
-  async function setGross(entrant, delta) {
+  function setGross(entrant, delta) {
     if (!currentHole) return
-    const key = `${entrant.id}-${hole}`
-    const existing = scoresByEntrantHole[key]
+
+    // Read from the ref, not the scoresByEntrantHole/state closure: two taps
+    // in quick succession can both fire before React re-renders, and a
+    // closure would have both read the same stale "existing" value and
+    // computed the same next score instead of incrementing twice.
+    const current = scoresRef.current
+    const idx = current.findIndex((s) => s.entrant_id === entrant.id && s.hole_number === hole)
+    const existing = idx !== -1 ? current[idx] : null
     const startValue = currentHole.par
     const nextValue = existing?.gross_strokes == null ? startValue : Math.min(15, Math.max(1, existing.gross_strokes + delta))
 
@@ -96,25 +108,18 @@ export default function DayScorer() {
       gross_strokes: nextValue,
       stableford_points: points,
     }
-    setScores((prev) => {
-      const idx = prev.findIndex((s) => s.entrant_id === entrant.id && s.hole_number === hole)
-      if (idx === -1) return [...prev, optimisticRow]
-      const next = [...prev]
-      next[idx] = { ...next[idx], ...optimisticRow }
-      return next
-    })
 
-    try {
-      await upsertScore({
-        competition_id: competition.id,
-        entrant_id: entrant.id,
-        hole_number: hole,
-        gross_strokes: nextValue,
-        stableford_points: points,
-      })
-    } catch (err) {
-      console.error(err)
-    }
+    const nextScores = idx === -1 ? [...current, optimisticRow] : current.map((s, i) => (i === idx ? { ...s, ...optimisticRow } : s))
+    scoresRef.current = nextScores
+    setScores(nextScores)
+
+    upsertScore({
+      competition_id: competition.id,
+      entrant_id: entrant.id,
+      hole_number: hole,
+      gross_strokes: nextValue,
+      stableford_points: points,
+    }).catch((err) => console.error(err))
   }
 
   function confirmAndAdvance() {
@@ -201,11 +206,7 @@ export default function DayScorer() {
 
             return (
               <div className="entrant-row" key={entrant.id}>
-                {entrant.photoUrls ? (
-                  <AvatarPair names={entrant.names} srcs={entrant.photoUrls} size={40} />
-                ) : (
-                  <Avatar src={entrant.photoUrl} name={entrant.name} size={44} />
-                )}
+                <EntrantAvatar entrant={entrant} size={44} />
                 <div className="entrant-info">
                   <div className="entrant-name">{entrant.name}</div>
                   <div className="entrant-points">

@@ -55,6 +55,19 @@ export async function getTeams() {
   return data
 }
 
+export async function uploadTeamPhoto(teamId, blob) {
+  const path = `teams/${teamId}-${Date.now()}.jpg`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const { error } = await supabase.from('teams').update({ photo_url: data.publicUrl }).eq('id', teamId)
+  if (error) throw error
+  return data.publicUrl
+}
+
 export async function upsertTeam(team) {
   if (team.id) {
     const { error } = await supabase

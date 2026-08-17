@@ -175,6 +175,14 @@ select {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.leaderboard-chevron {
+  color: var(--line-strong);
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
 .leaderboard-row.is-leader {
@@ -683,6 +691,20 @@ select {
   box-shadow: 0 0 0 2px var(--white);
 }
 
+.photo-picker-btn.is-disabled {
+  opacity: 0.5;
+}
+
+.photo-picker-btn.is-disabled input[type='file'] {
+  cursor: not-allowed;
+}
+
+.team-name-preview {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
 /* Dashboard (home) */
 .dashboard-header {
   display: flex;
@@ -786,4 +808,78 @@ select {
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Scorecard */
+.scorecard-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.scorecard-summary-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.scorecard-summary-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.scorecard-summary-meta {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+
+.scorecard-card {
+  padding: 14px 16px;
+}
+
+.scorecard-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 0.8fr 1fr 1fr 0.8fr;
+  align-items: center;
+  text-align: center;
+  padding: 9px 0;
+  font-size: 14.5px;
+  border-bottom: 1px solid var(--line);
+}
+
+.scorecard-grid:last-child {
+  border-bottom: none;
+}
+
+.scorecard-grid-head {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.scorecard-hole-num {
+  font-weight: 700;
+  color: var(--green-800);
+}
+
+.scorecard-pts {
+  font-weight: 700;
+  color: var(--green-800);
+}
+
+.scorecard-grid-total {
+  border-bottom: none;
+  border-top: 1px solid var(--line-strong);
+  font-weight: 700;
+  color: var(--ink-900);
+  margin-top: 2px;
 }

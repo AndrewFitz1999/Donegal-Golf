@@ -19,12 +19,14 @@ export async function loadEntrants(day) {
   return teams.map((t) => {
     const a = byId[t.player_1_id]
     const b = byId[t.player_2_id]
-    const names = [a?.name, b?.name].filter(Boolean).join(' & ')
+    const names = [a?.name, b?.name].filter(Boolean).join('/')
     return {
       id: t.id,
-      name: t.name || names || 'Team',
+      name: names || t.name || 'Team',
       handicap: a && b ? teamHandicap(a.handicap_index, b.handicap_index) : 0,
-      photoUrls: [a?.photo_url || null, b?.photo_url || null],
+      // A team photo, once set, replaces the two individual player avatars.
+      photoUrl: t.photo_url || null,
+      photoUrls: t.photo_url ? null : [a?.photo_url || null, b?.photo_url || null],
       names: [a?.name, b?.name],
     }
   })

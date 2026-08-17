@@ -28,3 +28,15 @@ export function AvatarPair({ names = [], srcs = [], size = 40 }) {
     </div>
   )
 }
+
+// Single avatar for a player, or a team: a team photo (entrant.photoUrl) always
+// wins when set; otherwise a team falls back to its two players' avatars.
+export function EntrantAvatar({ entrant, size = 40 }) {
+  if (entrant.photoUrl) {
+    return <Avatar src={entrant.photoUrl} name={entrant.name} size={size} />
+  }
+  if (entrant.photoUrls) {
+    return <AvatarPair names={entrant.names} srcs={entrant.photoUrls} size={Math.round(size * 0.9)} />
+  }
+  return <Avatar name={entrant.name} size={size} />
+}

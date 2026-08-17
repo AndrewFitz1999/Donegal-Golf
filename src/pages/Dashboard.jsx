@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import Avatar, { AvatarPair } from '../components/Avatar.jsx'
+import { EntrantAvatar } from '../components/Avatar.jsx'
 import { getCompetition, getHoles, getScores, subscribeToScores } from '../lib/data'
 import { loadEntrants } from '../lib/entrants'
 import { stablefordPoints } from '../lib/scoring'
@@ -89,14 +89,14 @@ export default function Dashboard() {
 
         {state.status === 'ready' && (
           <div className="leaderboard-list">
-            {state.rows.map((row, i) => (
-              <div key={row.id} className={`leaderboard-row${i === 0 && row.points > 0 ? ' is-leader' : ''}`}>
-                <div className="leaderboard-rank">{i + 1}</div>
-                {row.photoUrls ? (
-                  <AvatarPair names={row.names} srcs={row.photoUrls} size={38} />
-                ) : (
-                  <Avatar src={row.photoUrl} name={row.name} size={44} />
-                )}
+            {state.rows.map((row) => (
+              <Link
+                key={row.id}
+                to={`/day/${day}/scorecard/${row.id}`}
+                className={`leaderboard-row${row.rank === 1 && row.points > 0 ? ' is-leader' : ''}`}
+              >
+                <div className="leaderboard-rank">{row.tied ? `T${row.rank}` : row.rank}</div>
+                <EntrantAvatar entrant={row} size={44} />
                 <div className="leaderboard-name">
                   <div className="leaderboard-name-text">{row.name}</div>
                   <div className="leaderboard-thru">{row.thru === 0 ? 'Not started' : row.thru === 18 ? 'Final' : `Thru ${row.thru}`}</div>
@@ -105,7 +105,8 @@ export default function Dashboard() {
                   {row.points}
                   <span className="leaderboard-points-unit">pts</span>
                 </div>
-              </div>
+                <div className="leaderboard-chevron">›</div>
+              </Link>
             ))}
           </div>
         )}
@@ -154,6 +155,18 @@ function buildRows(entrants, holes, scores) {
     }
   })
 
+  // Sort by points; use thru only to order rows with equal points
+  // deterministically — it does not break the tie itself.
   rows.sort((a, b) => b.points - a.points || b.thru - a.thru)
+
+  let rank = 1
+  rows.forEach((row, i) => {
+    if (i > 0 && row.points !== rows[i - 1].points) rank = i + 1
+    row.rank = rank
+  })
+  rows.forEach((row) => {
+    row.tied = rows.filter((r) => r.rank === row.rank).length > 1
+  })
+
   return rows
 }

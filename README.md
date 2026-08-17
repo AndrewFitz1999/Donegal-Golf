@@ -21,11 +21,12 @@ src/
     image.js       Client-side photo downscale before upload
   pages/
     Dashboard.jsx  Root dashboard: Day 1/Day 2 tabs + that day's live leaderboard + Enter Score
-    Setup.jsx      Courses, players (incl. photos), teams (one-time setup)
+    Setup.jsx      Courses, players (incl. photos), teams (names + photos, one-time setup)
     DayScorer.jsx  Hole-by-hole score entry, per day, with confirm-to-advance
+    Scorecard.jsx  Full 18-hole scorecard for one player/team, per day
   components/
     TopBar.jsx
-    Avatar.jsx     Player/team avatar with initials fallback
+    Avatar.jsx     Player/team avatar with initials fallback (incl. EntrantAvatar helper)
   hooks/
     usePullToRefresh.js
 ```
@@ -40,8 +41,10 @@ Day 2 teams) is shared and entered once.
 - `/setup` — edit courses (18 holes each), players/handicaps/photos, Day 2 teams
 - `/day/1` — Dashboard on the Day 1 tab (singles Stableford leaderboard)
 - `/day/1/score` — Day 1 scorer
+- `/day/1/scorecard/:entrantId` — full scorecard for one player
 - `/day/2` — Dashboard on the Day 2 tab (scramble Stableford leaderboard)
 - `/day/2/score` — Day 2 scorer
+- `/day/2/scorecard/:entrantId` — full scorecard for one team
 
 ## Local development
 
@@ -56,7 +59,7 @@ npm run dev
 A Supabase project has already been provisioned for this app (`donegal-golf`,
 region `eu-west-1`) with the schema in place: `courses`, `holes`, `players`,
 `teams`, `competitions`, `scores`, plus a public `avatars` storage bucket for
-player profile photos. Row Level Security is enabled with fully open policies
+player and team profile photos. Row Level Security is enabled with fully open policies
 (read/write) on every table and on the storage bucket — there's no auth, so
 this only depends on the links not being shared beyond the group. `scores` is
 added to the `supabase_realtime` publication so the leaderboard updates live.
@@ -95,7 +98,14 @@ before the weekend.
   hole before "Confirm scores & next hole" is enabled, to avoid skipping
   someone by mistake. The hole picker still allows jumping to any hole to
   fix a mistake.
-- Player photos are downscaled client-side (max 512px) before upload to keep
-  it fast on course wifi.
+- Player and team photos are downscaled client-side (max 512px) before upload
+  to keep it fast on course wifi. A team photo, once set, replaces its two
+  players' individual avatars everywhere the team is shown.
+- Day 2 teams are displayed as `PlayerA/PlayerB`, derived automatically from
+  whichever two players are assigned to the team in Setup.
+- The leaderboard ranks by points with proper tie handling — players/teams
+  level on points share the same rank (shown as "T1", "T1", "3", …) and all
+  tied leaders get the highlight, not just the first row.
+- Tapping a leaderboard row opens that player's/team's full scorecard.
 - Built for this one specific weekend — no historical tracking or multi-event
   support by design.

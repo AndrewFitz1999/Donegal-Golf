@@ -11,6 +11,7 @@ import {
   uploadPlayerPhoto,
   getTeams,
   upsertTeam,
+  uploadTeamPhoto,
 } from '../lib/data'
 import { resizeImageFile } from '../lib/image'
 
@@ -227,14 +228,13 @@ function TeamsTab({ onSave }) {
   const [players, setPlayers] = useState([])
   const [teams, setTeams] = useState([])
   const [status, setStatus] = useState('loading')
+  const [uploadingIndex, setUploadingIndex] = useState(null)
 
   useEffect(() => {
     Promise.all([getPlayers(), getTeams()])
       .then(([p, t]) => {
         setPlayers(p)
-        const slots = [0, 1].map(
-          (i) => t[i] || { name: `Team ${i === 0 ? 'A' : 'B'}`, player_1_id: '', player_2_id: '' }
-        )
+        const slots = [0, 1].map((i) => t[i] || { name: '', player_1_id: '', player_2_id: '' })
         setTeams(slots)
         setStatus('ready')
       })
@@ -254,6 +254,21 @@ function TeamsTab({ onSave }) {
     onSave()
   }
 
+  async function handlePhotoChange(index, teamId, file) {
+    if (!file || !teamId) return
+    setUploadingIndex(index)
+    try {
+      const resized = await resizeImageFile(file)
+      const photoUrl = await uploadTeamPhoto(teamId, resized)
+      setTeams((prev) => prev.map((t, i) => (i === index ? { ...t, photo_url: photoUrl } : t)))
+      onSave()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUploadingIndex(null)
+    }
+  }
+
   if (status === 'loading') return <div className="state-message">Loading teams…</div>
   if (status === 'error') return <div className="state-message">Couldn't load teams. Check your connection.</div>
 
@@ -263,16 +278,25 @@ function TeamsTab({ onSave }) {
     <div>
       {teams.map((team, i) => {
         const usedByOtherTeam = i === 0 ? [teams[1]?.player_1_id, teams[1]?.player_2_id] : [teams[0]?.player_1_id, teams[0]?.player_2_id]
+        const displayName = team.player_1_id && team.player_2_id ? `${playerName(team.player_1_id)}/${playerName(team.player_2_id)}` : `Team ${i === 0 ? 'A' : 'B'}`
 
         return (
           <div className="card" style={{ marginBottom: 16 }} key={i}>
-            <div className="field">
-              <label>Team name</label>
-              <input
-                value={team.name}
-                onChange={(e) => setTeams((prev) => prev.map((t, idx) => (idx === i ? { ...t, name: e.target.value } : t)))}
-                onBlur={(e) => saveTeam(i, 'name', e.target.value)}
-              />
+            <div className="photo-picker" style={{ marginBottom: 16 }}>
+              <label className={`photo-picker-btn${team.id ? '' : ' is-disabled'}`}>
+                <Avatar src={team.photo_url} name={displayName} size={52} />
+                <span className="photo-picker-badge">{uploadingIndex === i ? '…' : '+'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={!team.id || uploadingIndex === i}
+                  onChange={(e) => handlePhotoChange(i, team.id, e.target.files?.[0])}
+                />
+              </label>
+              <div>
+                <div className="team-name-preview">{displayName}</div>
+                {!team.id && <div className="entrant-points">Pick both players, then add a team photo</div>}
+              </div>
             </div>
             <div className="team-picker">
               <div className="field">
@@ -302,11 +326,6 @@ function TeamsTab({ onSave }) {
                 </select>
               </div>
             </div>
-            {team.player_1_id && team.player_2_id && (
-              <div className="entrant-points" style={{ marginTop: 10 }}>
-                {playerName(team.player_1_id)} & {playerName(team.player_2_id)}
-              </div>
-            )}
           </div>
         )
       })}
