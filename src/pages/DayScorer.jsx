@@ -64,6 +64,33 @@ export default function DayScorer() {
   const scoresRef = useRef(scores)
   scoresRef.current = scores
 
+  // Rapid taps each fired their own upsertScore before; those requests can
+  // land out of order, and the realtime echo of an earlier (now-stale) one
+  // arriving after a later tap would overwrite the newer value — exactly
+  // the "jumps around when tapped quickly" symptom. Debouncing per cell so
+  // only the final value after a burst of taps hits the network fixes it,
+  // while local state (and thus the visible number) still updates instantly
+  // on every tap.
+  const pendingWrites = useRef({})
+  const writeTimers = useRef({})
+
+  function flushWrite(key) {
+    const payload = pendingWrites.current[key]
+    if (!payload) return
+    delete pendingWrites.current[key]
+    clearTimeout(writeTimers.current[key])
+    delete writeTimers.current[key]
+    upsertScore(payload).catch((err) => console.error(err))
+  }
+
+  function flushAllWrites() {
+    Object.keys(pendingWrites.current).forEach(flushWrite)
+  }
+
+  useEffect(() => {
+    return () => flushAllWrites()
+  }, [])
+
   const currentHole = holes.find((h) => h.hole_number === hole)
 
   const scoresByEntrantHole = useMemo(() => {
@@ -113,17 +140,21 @@ export default function DayScorer() {
     scoresRef.current = nextScores
     setScores(nextScores)
 
-    upsertScore({
+    const key = `${entrant.id}-${hole}`
+    pendingWrites.current[key] = {
       competition_id: competition.id,
       entrant_id: entrant.id,
       hole_number: hole,
       gross_strokes: nextValue,
       stableford_points: points,
-    }).catch((err) => console.error(err))
+    }
+    clearTimeout(writeTimers.current[key])
+    writeTimers.current[key] = setTimeout(() => flushWrite(key), 400)
   }
 
   function confirmAndAdvance() {
     if (!allFilledCurrentHole) return
+    flushAllWrites()
     if (hole >= 18) {
       navigate(`/day/${day}`)
     } else {

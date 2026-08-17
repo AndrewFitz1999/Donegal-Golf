@@ -50,10 +50,6 @@ body {
   overscroll-behavior-y: contain;
 }
 
-html {
-  scroll-snap-type: y mandatory;
-}
-
 body {
   background: var(--cream-50);
   color: var(--ink-900);
@@ -89,6 +85,7 @@ a {
 
 button {
   font-family: inherit;
+  touch-action: manipulation;
 }
 
 input,
@@ -789,7 +786,6 @@ select {
   display: flex;
   align-items: flex-end;
   overflow: hidden;
-  scroll-snap-align: start;
 }
 
 .trip-hero-scrim {
@@ -834,7 +830,6 @@ select {
   padding-right: 20px;
   background: var(--cream-50);
   border-bottom: 1px solid var(--line);
-  scroll-snap-align: start;
 }
 
 .dashboard-tabs {
