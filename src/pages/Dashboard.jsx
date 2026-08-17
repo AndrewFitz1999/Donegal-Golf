@@ -6,7 +6,7 @@ import { loadEntrants } from '../lib/entrants'
 import { stablefordPoints } from '../lib/scoring'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
-const DAY_LABEL = { 1: 'Saturday', 2: 'Sunday' }
+const DAY_LABEL = { 1: 'Friday', 2: 'Saturday' }
 
 export default function Dashboard() {
   const { day } = useParams()
@@ -49,26 +49,24 @@ export default function Dashboard() {
 
   return (
     <div className="app-shell">
+      <div className="dashboard-tabbar">
+        <div className="tabs dashboard-tabs">
+          {[1, 2].map((d) => (
+            <Link key={d} to={`/day/${d}`} className={`tab-btn${String(d) === day ? ' is-active' : ''}`}>
+              Day {d} · {DAY_LABEL[d]}
+            </Link>
+          ))}
+        </div>
+        <Link to="/setup" className="dashboard-setup-link" aria-label="Setup">
+          ⚙
+        </Link>
+      </div>
+
       <div className="dashboard-hero" style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : undefined}>
         <div className="dashboard-hero-scrim" />
         <div className="dashboard-hero-content">
-          <div className="dashboard-header">
-            <div>
-              <div className="dashboard-kicker">Donegal Golf Weekend</div>
-              <h1 className="dashboard-title">Leaderboard</h1>
-            </div>
-            <Link to="/setup" className="dashboard-setup-link" aria-label="Setup">
-              ⚙
-            </Link>
-          </div>
-
-          <div className="tabs dashboard-tabs">
-            {[1, 2].map((d) => (
-              <Link key={d} to={`/day/${d}`} className={`tab-btn${String(d) === day ? ' is-active' : ''}`}>
-                Day {d} · {DAY_LABEL[d]}
-              </Link>
-            ))}
-          </div>
+          <div className="dashboard-kicker">Donegal Golf Weekend</div>
+          <h1 className="dashboard-title">Leaderboard</h1>
 
           <div className="dashboard-meta">
             <div>
