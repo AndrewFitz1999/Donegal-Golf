@@ -106,9 +106,20 @@ before the weekend.
   score-entry button on the dashboard itself anymore) and "Clear all scores"
   (confirm-gated) for wiping every score across both days without touching
   courses/players/teams/handicaps.
-- Each competition can have prize money (Setup → Courses, per day) shown on
-  that day's dashboard card next to the competition type — Day 2's shows a
-  "pp" (per player) suffix since it's a team event, Day 1's doesn't.
+- Each competition can have prize money (Setup → Courses, per day) shown as
+  a gold badge on that day's dashboard card — Day 2's shows a "pp" (per
+  player) suffix since it's a team event, Day 1's doesn't.
+- Scorecard scores render as shaped badges, not just colored text: birdie or
+  better is a red circle (black text), bogey a blue square (black text),
+  double bogey or worse a black square (white text); par stays plain.
+- The app is set up to install cleanly from iOS "Add to Home Screen": a
+  `manifest.json` + `apple-touch-icon.png`/`icon-192.png`/`icon-512.png`
+  (generated from `favicon.svg` with a solid background — a bare circle on
+  transparent leaves the corners of a square icon empty), and the iOS meta
+  tags for standalone/full-screen launch with no Safari chrome. Since
+  standalone mode draws content under the status bar/notch, sticky headers
+  (`.topbar`, `.dashboard-tabbar`) add `env(safe-area-inset-top)` padding so
+  nothing sits underneath it.
 - Uploading a banner photo (trip hero or a course's background) opens a
   pan/zoom crop step (`PhotoCropModal.jsx`) so you control what's actually
   visible instead of leaving it to a blind CSS `background-size: cover` crop.

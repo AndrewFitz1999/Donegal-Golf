@@ -89,10 +89,8 @@ export default function Dashboard() {
           <div className="dashboard-meta">
             <div>
               <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
-              <div className="dashboard-comp-type">
-                {compType}
-                {prizeLabel && <span className="dashboard-prize"> · {prizeLabel}</span>}
-              </div>
+              <div className="dashboard-comp-type">{compType}</div>
+              {prizeLabel && <div className="prize-badge">🏆 {prizeLabel}</div>}
             </div>
             <button className="live-dot refresh-btn" onClick={refresh} disabled={refreshing} aria-label="Refresh">
               {refreshing ? 'Refreshing…' : 'Live · Refresh'}

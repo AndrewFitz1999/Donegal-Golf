@@ -129,7 +129,9 @@ function ScorecardNine({ title, rows }) {
           <div className="scorecard-grid" key={r.hole}>
             <div className="scorecard-hole-num">{r.hole}</div>
             <div>{r.par}</div>
-            <div className={r.gross != null ? scoreClass(r.gross, r.par) : ''}>{r.gross ?? '–'}</div>
+            <div>
+              {r.gross != null ? <span className={`score-badge ${scoreClass(r.gross, r.par)}`}>{r.gross}</span> : '–'}
+            </div>
             <div className="scorecard-pts">{r.points ?? '–'}</div>
           </div>
         ))}
@@ -144,10 +146,10 @@ function ScorecardNine({ title, rows }) {
   )
 }
 
-// birdie or better = red, par = neutral, bogey = blue, double bogey or worse = dark blue
+// birdie or better = red circle, par = neutral, bogey = blue square, double bogey or worse = black square
 function scoreClass(gross, par) {
   const diff = gross - par
-  if (diff <= -1) return 'score-under'
+  if (diff <= -1) return 'score-birdie'
   if (diff === 1) return 'score-bogey'
   if (diff >= 2) return 'score-double'
   return ''
