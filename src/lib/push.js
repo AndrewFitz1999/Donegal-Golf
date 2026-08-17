@@ -29,8 +29,10 @@ export async function getPushSubscription() {
 }
 
 export async function subscribeToPush() {
+  if (!VAPID_PUBLIC_KEY) throw new Error('Missing VITE_VAPID_PUBLIC_KEY — check the deployment config')
+
   const permission = await Notification.requestPermission()
-  if (permission !== 'granted') throw new Error('Notification permission denied')
+  if (permission !== 'granted') throw new Error(`Notification permission ${permission}`)
 
   const registration = await navigator.serviceWorker.ready
   const subscription = await registration.pushManager.subscribe({

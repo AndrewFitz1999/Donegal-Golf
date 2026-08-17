@@ -109,7 +109,7 @@ function TripTab({ onSave }) {
       setNotifState('on')
     } catch (err) {
       console.error(err)
-      alert('Could not enable notifications. Check that this device allows notifications for this app.')
+      alert(`Could not enable notifications: ${err.message || err}`)
     } finally {
       setNotifBusy(false)
     }
