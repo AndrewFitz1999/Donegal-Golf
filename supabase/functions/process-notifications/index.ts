@@ -105,13 +105,13 @@ Deno.serve(async () => {
       const breakdown = entrants
         .map((e, i) => {
           const pts = stablefordPoints(rows[i]!.gross_strokes, hole.par, hole.stroke_index, e.handicap)
-          return `${e.name} ${pts}pt${pts === 1 ? '' : 's'}`
+          return `${e.name} | ${pts}pt${pts === 1 ? '' : 's'}`
         })
-        .join(', ')
+        .join('\n')
 
       events.push({
         title: `Day ${comp.day} · Hole ${hole.hole_number}`,
-        body: `Par ${hole.par} — ${breakdown}`,
+        body: breakdown,
       })
 
       await supabase.from('notification_log').insert({ type: 'hole', competition_id: comp.id, hole_number: hole.hole_number })
