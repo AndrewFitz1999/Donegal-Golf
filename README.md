@@ -93,6 +93,13 @@ before the weekend.
 
 ## Notes
 
+- Switching the Day 1/Day 2 tab slides the dashboard content in from the
+  right or left depending on direction. `/day/1` and `/day/2` match the same
+  route, so React Router re-renders `Dashboard` instead of remounting it —
+  the animation is plain CSS, keyed on `day` so it replays on every switch,
+  with a ref (not state) tracking the previous day so the direction is
+  correct on the very render the key changes. The very first render never
+  animates, and it respects `prefers-reduced-motion`.
 - Score entry writes optimistically to the UI, then to Supabase; the
   leaderboard subscribes to `scores` changes over Supabase Realtime and
   recomputes on every insert/update. A "Live · Refresh" button is a manual

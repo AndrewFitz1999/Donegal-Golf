@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { EntrantAvatar } from '../components/Avatar.jsx'
 import { getCompetition, getHoles, getScores, getEventSettings, subscribeToScores } from '../lib/data'
@@ -48,6 +48,19 @@ export default function Dashboard() {
     setRefreshing(false)
   }
 
+  // Both /day/1 and /day/2 match the same route, so switching tabs re-renders
+  // this component rather than remounting it — comparing against the day from
+  // the last commit (via a ref, not state, so it's ready on the same render
+  // the key changes) tells us which way to slide. First render gets no
+  // direction, so the initial page load never animates.
+  const prevDayRef = useRef(day)
+  const hasMountedRef = useRef(false)
+  const direction = hasMountedRef.current ? (Number(day) > Number(prevDayRef.current) ? 'left' : 'right') : null
+  useEffect(() => {
+    hasMountedRef.current = true
+    prevDayRef.current = day
+  }, [day])
+
   const type = competition?.type || (day === '2' ? 'scramble_stableford' : 'singles_stableford')
   const compType = type === 'scramble_stableford' ? 'Scramble Stableford' : 'Singles Stableford'
 
@@ -80,61 +93,65 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      <div className="dashboard-hero" style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : undefined}>
-        <div className="dashboard-hero-scrim" />
-        <div className="dashboard-hero-content">
-          <div className="dashboard-kicker">Donegal Golf Weekend</div>
-          <h1 className="dashboard-title">Leaderboard</h1>
+      <div className="dashboard-slide-viewport">
+        <div key={day} className={`dashboard-slide-panel${direction ? ` slide-${direction}` : ''}`}>
+          <div className="dashboard-hero" style={photoUrl ? { backgroundImage: `url(${photoUrl})` } : undefined}>
+            <div className="dashboard-hero-scrim" />
+            <div className="dashboard-hero-content">
+              <div className="dashboard-kicker">Donegal Golf Weekend</div>
+              <h1 className="dashboard-title">Leaderboard</h1>
 
-          <div className="dashboard-meta">
-            <div>
-              <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
-              <div className="dashboard-comp-type">{compType}</div>
-              {prizeLabel && <div className="prize-badge">🏆 {prizeLabel}</div>}
+              <div className="dashboard-meta">
+                <div>
+                  <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
+                  <div className="dashboard-comp-type">{compType}</div>
+                  {prizeLabel && <div className="prize-badge">🏆 {prizeLabel}</div>}
+                </div>
+                <button className="live-dot refresh-btn" onClick={refresh} disabled={refreshing} aria-label="Refresh">
+                  {refreshing ? 'Refreshing…' : 'Live · Refresh'}
+                </button>
+              </div>
             </div>
-            <button className="live-dot refresh-btn" onClick={refresh} disabled={refreshing} aria-label="Refresh">
-              {refreshing ? 'Refreshing…' : 'Live · Refresh'}
-            </button>
           </div>
+
+          {state.status === 'loading' && <div className="state-message">Loading leaderboard…</div>}
+
+          {state.status === 'error' && (
+            <div className="state-message">
+              Couldn't load the leaderboard. Check your connection.
+              <div style={{ marginTop: 14 }}>
+                <button className="btn btn-secondary" onClick={load}>
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+
+          {state.status === 'ready' && (
+            <div className="leaderboard-list">
+              {state.rows.map((row) => (
+                <Link
+                  key={row.id}
+                  to={`/day/${day}/scorecard/${row.id}`}
+                  className={`leaderboard-row${row.rank === 1 && row.points > 0 ? ' is-leader' : ''}`}
+                >
+                  <div className="leaderboard-rank">{row.tied ? `T${row.rank}` : row.rank}</div>
+                  <EntrantAvatar entrant={row} size={44} />
+                  <div className="leaderboard-name">
+                    <div className="leaderboard-name-text">{row.name}</div>
+                    <div className="leaderboard-thru">{row.thru === 0 ? 'Not started' : row.thru === 18 ? 'Final' : `Thru ${row.thru}`}</div>
+                  </div>
+                  <div className="leaderboard-points">
+                    {row.points}
+                    <span className="leaderboard-points-unit">pts</span>
+                  </div>
+                  <div className="leaderboard-chevron">›</div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
-      {state.status === 'loading' && <div className="state-message">Loading leaderboard…</div>}
-
-      {state.status === 'error' && (
-        <div className="state-message">
-          Couldn't load the leaderboard. Check your connection.
-          <div style={{ marginTop: 14 }}>
-            <button className="btn btn-secondary" onClick={load}>
-              Retry
-            </button>
-          </div>
-        </div>
-      )}
-
-      {state.status === 'ready' && (
-        <div className="leaderboard-list">
-          {state.rows.map((row) => (
-            <Link
-              key={row.id}
-              to={`/day/${day}/scorecard/${row.id}`}
-              className={`leaderboard-row${row.rank === 1 && row.points > 0 ? ' is-leader' : ''}`}
-            >
-              <div className="leaderboard-rank">{row.tied ? `T${row.rank}` : row.rank}</div>
-              <EntrantAvatar entrant={row} size={44} />
-              <div className="leaderboard-name">
-                <div className="leaderboard-name-text">{row.name}</div>
-                <div className="leaderboard-thru">{row.thru === 0 ? 'Not started' : row.thru === 18 ? 'Final' : `Thru ${row.thru}`}</div>
-              </div>
-              <div className="leaderboard-points">
-                {row.points}
-                <span className="leaderboard-points-unit">pts</span>
-              </div>
-              <div className="leaderboard-chevron">›</div>
-            </Link>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

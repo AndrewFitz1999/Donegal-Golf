@@ -866,6 +866,47 @@ select {
   font-size: 14.5px;
 }
 
+.dashboard-slide-viewport {
+  overflow-x: hidden;
+}
+
+.dashboard-slide-panel.slide-left {
+  animation: dashboard-slide-from-right 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dashboard-slide-panel.slide-right {
+  animation: dashboard-slide-from-left 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes dashboard-slide-from-right {
+  from {
+    transform: translateX(48px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes dashboard-slide-from-left {
+  from {
+    transform: translateX(-48px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-slide-panel.slide-left,
+  .dashboard-slide-panel.slide-right {
+    animation: none;
+  }
+}
+
 .dashboard-hero {
   position: relative;
   margin-top: 16px;
