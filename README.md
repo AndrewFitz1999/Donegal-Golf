@@ -100,10 +100,12 @@ before the weekend.
   pull-to-refresh can't be reliably suppressed from a web page and would
   otherwise fight with a custom one.
 - Setup → Trip lets you set the trip title/dates and a full-bleed hero photo
-  shown at the very top of the dashboard; it scrolls away naturally to reveal
-  the sticky day-tab bar and leaderboard beneath it. Also home to "Clear all
-  scores" (confirm-gated) for wiping every score across both days without
-  touching courses/players/teams/handicaps.
+  shown at the very top of the dashboard. The smallest deliberate scroll down
+  commits fully to revealing the sticky day-tab bar and leaderboard beneath
+  it (CSS scroll-snap plus a small JS assist, since snap alone needs a more
+  decisive scroll than "just a nudge" to commit). Trip is also home to
+  "Clear all scores" (confirm-gated) for wiping every score across both days
+  without touching courses/players/teams/handicaps.
 - The scorer requires every entrant to have a score entered for the current
   hole before "Confirm scores & next hole" is enabled, to avoid skipping
   someone by mistake. The hole picker still allows jumping to any hole to

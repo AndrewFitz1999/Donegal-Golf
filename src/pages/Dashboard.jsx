@@ -42,6 +42,30 @@ export default function Dashboard() {
     return unsubscribe
   }, [competition, load])
 
+  // CSS scroll-snap alone needs a fairly decisive scroll before a browser
+  // commits to the next snap point — a small nudge can just bounce back to
+  // the top. This commits the reveal on the first sign of intentional
+  // downward scroll instead of waiting for that threshold.
+  useEffect(() => {
+    const tabbar = document.querySelector('.dashboard-tabbar')
+    if (!tabbar) return
+    const revealAt = tabbar.offsetTop
+    let committed = false
+
+    function handleScroll() {
+      const y = window.scrollY
+      if (!committed && y > 12 && y < revealAt) {
+        committed = true
+        window.scrollTo({ top: revealAt, behavior: 'smooth' })
+      } else if (y <= 4) {
+        committed = false
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   async function refresh() {
     setRefreshing(true)
     await load()
