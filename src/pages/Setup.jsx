@@ -21,8 +21,11 @@ import {
   updateEventSettings,
   uploadEventHeroPhoto,
   clearAllScores,
+  savePushSubscription,
+  deletePushSubscription,
 } from '../lib/data'
 import { resizeImageFile } from '../lib/image'
+import { pushSupported, isIOS, isStandalone, getPushSubscription, subscribeToPush, unsubscribeFromPush } from '../lib/push'
 
 const TABS = ['Trip', 'Courses', 'Players', 'Teams']
 // Banner photos (trip hero, course background) are wide and short — crop to
@@ -71,6 +74,8 @@ function TripTab({ onSave }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [cropFile, setCropFile] = useState(null)
   const [clearing, setClearing] = useState(false)
+  const [notifState, setNotifState] = useState('checking') // checking | off | on | needs-install | unsupported
+  const [notifBusy, setNotifBusy] = useState(false)
 
   useEffect(() => {
     getEventSettings()
@@ -85,6 +90,46 @@ function TripTab({ onSave }) {
         setStatus('error')
       })
   }, [])
+
+  useEffect(() => {
+    if (!pushSupported()) {
+      setNotifState(isIOS() && !isStandalone() ? 'needs-install' : 'unsupported')
+      return
+    }
+    getPushSubscription()
+      .then((sub) => setNotifState(sub ? 'on' : 'off'))
+      .catch(() => setNotifState('off'))
+  }, [])
+
+  async function handleEnableNotifications() {
+    setNotifBusy(true)
+    try {
+      const subscription = await subscribeToPush()
+      await savePushSubscription(subscription)
+      setNotifState('on')
+    } catch (err) {
+      console.error(err)
+      alert('Could not enable notifications. Check that this device allows notifications for this app.')
+    } finally {
+      setNotifBusy(false)
+    }
+  }
+
+  async function handleDisableNotifications() {
+    setNotifBusy(true)
+    try {
+      const subscription = await getPushSubscription()
+      if (subscription) {
+        await deletePushSubscription(subscription.endpoint)
+        await unsubscribeFromPush(subscription)
+      }
+      setNotifState('off')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setNotifBusy(false)
+    }
+  }
 
   async function saveField(field, value) {
     await updateEventSettings(event.id, { [field]: value })
@@ -178,6 +223,42 @@ function TripTab({ onSave }) {
           <Link to="/day/2/score" className="btn btn-secondary">
             Enter Day 2 Scores
           </Link>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-title">Notifications</div>
+        <div className="card">
+          {notifState === 'checking' && <p style={{ fontSize: 13.5, color: 'var(--ink-500)', margin: 0 }}>Checking…</p>}
+
+          {notifState === 'unsupported' && (
+            <p style={{ fontSize: 13.5, color: 'var(--ink-500)', margin: 0 }}>
+              Notifications aren't supported in this browser.
+            </p>
+          )}
+
+          {notifState === 'needs-install' && (
+            <p style={{ fontSize: 13.5, color: 'var(--ink-500)', margin: 0 }}>
+              On iPhone, notifications only work once this is added to your Home Screen. Tap Share →
+              "Add to Home Screen", then open it from there and come back to this page.
+            </p>
+          )}
+
+          {(notifState === 'on' || notifState === 'off') && (
+            <>
+              <p style={{ fontSize: 13.5, color: 'var(--ink-500)', margin: '0 0 14px' }}>
+                Get a notification ~30 seconds after each hole's scores are entered, and one when a
+                day's winner is decided.
+              </p>
+              <button
+                className="btn btn-secondary"
+                onClick={notifState === 'on' ? handleDisableNotifications : handleEnableNotifications}
+                disabled={notifBusy}
+              >
+                {notifBusy ? 'Working…' : notifState === 'on' ? 'Notifications on · Turn off' : 'Enable notifications'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

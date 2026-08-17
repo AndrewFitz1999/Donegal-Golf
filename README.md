@@ -77,6 +77,7 @@ before the weekend.
 3. Set environment variables in the Vercel project settings:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_VAPID_PUBLIC_KEY`
 4. Framework preset: Vite. Build command `npm run build`, output directory `dist`.
 5. Deploy, then share the root link — everyone lands on the live Day 1 dashboard.
 
@@ -162,3 +163,21 @@ before the weekend.
 - Tapping a leaderboard row opens that player's/team's full scorecard.
 - Built for this one specific weekend — no historical tracking or multi-event
   support by design.
+- **Push notifications** (Setup → Trip → Notifications, one on/off toggle):
+  a hole notification fires once every entrant has a score in for that hole,
+  showing the par and each player's/team's points; a winner notification
+  fires once a day's round is fully complete, naming the winner(s) and the
+  prize money if set. Both wait 30 seconds after the last score edit before
+  sending, in case of a correction — this is enforced server-side (Postgres
+  `updated_at` on `scores`, kept accurate by a trigger since the column only
+  had an insert-time default before), not with a client-side timer, because
+  iOS suspends JS timers once the screen locks. A `pg_cron` job polls the
+  `process-notifications` Supabase edge function every 30 seconds; the
+  function computes what's changed, dedupes against `notification_log` (one
+  row per hole/day so nothing re-sends), and delivers via Web Push using a
+  VAPID keypair (private half in Supabase Vault, `service_role`-only RPC to
+  read it — public half in `VITE_VAPID_PUBLIC_KEY`). **iOS Safari only
+  supports Web Push for a site added to the Home Screen (iOS 16.4+)** — a
+  normal Safari tab has no notification support at all, so the toggle
+  detects that case and asks you to Add to Home Screen first instead of
+  silently doing nothing.

@@ -165,6 +165,20 @@ export async function uploadEventHeroPhoto(eventId, blob) {
   return data.publicUrl
 }
 
+export async function savePushSubscription(subscription) {
+  const json = subscription.toJSON()
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    { endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
+    { onConflict: 'endpoint' }
+  )
+  if (error) throw error
+}
+
+export async function deletePushSubscription(endpoint) {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+  if (error) throw error
+}
+
 export function subscribeToScores(competitionId, onChange) {
   const channel = supabase
     .channel(`scores-${competitionId}`)
