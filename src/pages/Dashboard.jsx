@@ -52,16 +52,20 @@ export default function Dashboard() {
   const compType = type === 'scramble_stableford' ? 'Scramble Stableford' : 'Singles Stableford'
 
   const photoUrl = competition?.courses?.photo_url
+  const prize = competition?.prize_money
+  const prizeLabel = prize ? (day === '2' ? `€${prize}pp` : `€${prize}`) : null
 
   return (
     <div className="app-shell">
-      <div className="trip-hero" style={event?.hero_photo_url ? { backgroundImage: `url(${event.hero_photo_url})` } : undefined}>
-        <div className="trip-hero-scrim" />
-        <div className="trip-hero-content">
-          <div className="trip-hero-title">{event?.title || 'Golf Weekend'}</div>
-          {event?.subtitle && <div className="trip-hero-subtitle">{event.subtitle}</div>}
+      {!event?.hero_hidden && (
+        <div className="trip-hero" style={event?.hero_photo_url ? { backgroundImage: `url(${event.hero_photo_url})` } : undefined}>
+          <div className="trip-hero-scrim" />
+          <div className="trip-hero-content">
+            <div className="trip-hero-title">{event?.title || 'Golf Weekend'}</div>
+            {event?.subtitle && <div className="trip-hero-subtitle">{event.subtitle}</div>}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="dashboard-tabbar">
         <div className="tabs dashboard-tabs">
@@ -85,7 +89,10 @@ export default function Dashboard() {
           <div className="dashboard-meta">
             <div>
               <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
-              <div className="dashboard-comp-type">{compType}</div>
+              <div className="dashboard-comp-type">
+                {compType}
+                {prizeLabel && <span className="dashboard-prize"> · {prizeLabel}</span>}
+              </div>
             </div>
             <button className="live-dot refresh-btn" onClick={refresh} disabled={refreshing} aria-label="Refresh">
               {refreshing ? 'Refreshing…' : 'Live · Refresh'}
@@ -94,52 +101,42 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="page-content">
-        {state.status === 'loading' && <div className="state-message">Loading leaderboard…</div>}
+      {state.status === 'loading' && <div className="state-message">Loading leaderboard…</div>}
 
-        {state.status === 'error' && (
-          <div className="state-message">
-            Couldn't load the leaderboard. Check your connection.
-            <div style={{ marginTop: 14 }}>
-              <button className="btn btn-secondary" onClick={load}>
-                Retry
-              </button>
-            </div>
+      {state.status === 'error' && (
+        <div className="state-message">
+          Couldn't load the leaderboard. Check your connection.
+          <div style={{ marginTop: 14 }}>
+            <button className="btn btn-secondary" onClick={load}>
+              Retry
+            </button>
           </div>
-        )}
-
-        {state.status === 'ready' && (
-          <div className="leaderboard-list">
-            {state.rows.map((row) => (
-              <Link
-                key={row.id}
-                to={`/day/${day}/scorecard/${row.id}`}
-                className={`leaderboard-row${row.rank === 1 && row.points > 0 ? ' is-leader' : ''}`}
-              >
-                <div className="leaderboard-rank">{row.tied ? `T${row.rank}` : row.rank}</div>
-                <EntrantAvatar entrant={row} size={44} />
-                <div className="leaderboard-name">
-                  <div className="leaderboard-name-text">{row.name}</div>
-                  <div className="leaderboard-thru">{row.thru === 0 ? 'Not started' : row.thru === 18 ? 'Final' : `Thru ${row.thru}`}</div>
-                </div>
-                <div className="leaderboard-points">
-                  {row.points}
-                  <span className="leaderboard-points-unit">pts</span>
-                </div>
-                <div className="leaderboard-chevron">›</div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="action-bar">
-        <div className="action-bar-inner">
-          <Link to={`/day/${day}/score`} className="btn btn-primary">
-            Enter Score
-          </Link>
         </div>
-      </div>
+      )}
+
+      {state.status === 'ready' && (
+        <div className="leaderboard-list">
+          {state.rows.map((row) => (
+            <Link
+              key={row.id}
+              to={`/day/${day}/scorecard/${row.id}`}
+              className={`leaderboard-row${row.rank === 1 && row.points > 0 ? ' is-leader' : ''}`}
+            >
+              <div className="leaderboard-rank">{row.tied ? `T${row.rank}` : row.rank}</div>
+              <EntrantAvatar entrant={row} size={44} />
+              <div className="leaderboard-name">
+                <div className="leaderboard-name-text">{row.name}</div>
+                <div className="leaderboard-thru">{row.thru === 0 ? 'Not started' : row.thru === 18 ? 'Final' : `Thru ${row.thru}`}</div>
+              </div>
+              <div className="leaderboard-points">
+                {row.points}
+                <span className="leaderboard-points-unit">pts</span>
+              </div>
+              <div className="leaderboard-chevron">›</div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

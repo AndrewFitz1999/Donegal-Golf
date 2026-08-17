@@ -101,9 +101,14 @@ before the weekend.
   otherwise fight with a custom one.
 - Setup → Trip lets you set the trip title/dates and a short full-bleed hero
   banner shown at the top of the dashboard (plain scroll, no snap/animation)
-  above the sticky day-tab bar and leaderboard. Trip is also home to
-  "Clear all scores" (confirm-gated) for wiping every score across both days
-  without touching courses/players/teams/handicaps.
+  above the sticky day-tab bar and leaderboard, with a toggle to hide it
+  entirely. Trip also holds the "Enter Day 1/2 Scores" links (there's no
+  score-entry button on the dashboard itself anymore) and "Clear all scores"
+  (confirm-gated) for wiping every score across both days without touching
+  courses/players/teams/handicaps.
+- Each competition can have prize money (Setup → Courses, per day) shown on
+  that day's dashboard card next to the competition type — Day 2's shows a
+  "pp" (per player) suffix since it's a team event, Day 1's doesn't.
 - Uploading a banner photo (trip hero or a course's background) opens a
   pan/zoom crop step (`PhotoCropModal.jsx`) so you control what's actually
   visible instead of leaving it to a blind CSS `background-size: cover` crop.

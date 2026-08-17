@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import TopBar from '../components/TopBar.jsx'
 import Avatar from '../components/Avatar.jsx'
 import PhotoCropModal from '../components/PhotoCropModal.jsx'
@@ -8,6 +9,8 @@ import {
   updateCourseName,
   updateHole,
   uploadCoursePhoto,
+  getCompetitions,
+  updateCompetitionPrize,
   getPlayers,
   updatePlayer,
   uploadPlayerPhoto,
@@ -154,9 +157,29 @@ function TripTab({ onSave }) {
             />
           </label>
         </div>
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
+            checked={!event?.hero_hidden}
+            onChange={(e) => saveField('hero_hidden', !e.target.checked)}
+          />
+          Show hero banner on the dashboard
+        </label>
       </div>
 
       {cropFile && <PhotoCropModal file={cropFile} aspect={BANNER_ASPECT} onCancel={() => setCropFile(null)} onConfirm={handleCropConfirm} />}
+
+      <div className="section">
+        <div className="section-title">Scoring</div>
+        <div className="card scoring-links">
+          <Link to="/day/1/score" className="btn btn-secondary">
+            Enter Day 1 Scores
+          </Link>
+          <Link to="/day/2/score" className="btn btn-secondary">
+            Enter Day 2 Scores
+          </Link>
+        </div>
+      </div>
 
       <div className="section">
         <div className="section-title">Danger zone</div>
@@ -175,17 +198,20 @@ function TripTab({ onSave }) {
 
 function CoursesTab({ onSave }) {
   const [courses, setCourses] = useState([])
+  const [competitions, setCompetitions] = useState([])
   const [activeCourseId, setActiveCourseId] = useState(null)
   const [holes, setHoles] = useState([])
   const [name, setName] = useState('')
+  const [prizeMoney, setPrizeMoney] = useState('')
   const [status, setStatus] = useState('loading')
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [cropFile, setCropFile] = useState(null)
 
   useEffect(() => {
-    getCourses()
-      .then((c) => {
+    Promise.all([getCourses(), getCompetitions()])
+      .then(([c, comps]) => {
         setCourses(c)
+        setCompetitions(comps)
         setActiveCourseId(c[0]?.id ?? null)
         setStatus('ready')
       })
@@ -195,6 +221,9 @@ function CoursesTab({ onSave }) {
       })
   }, [])
 
+  const activeIndex = courses.findIndex((c) => c.id === activeCourseId)
+  const activeCompetition = competitions.find((c) => c.day === activeIndex + 1)
+
   useEffect(() => {
     if (!activeCourseId) return
     const course = courses.find((c) => c.id === activeCourseId)
@@ -202,9 +231,21 @@ function CoursesTab({ onSave }) {
     getHoles(activeCourseId).then((h) => setHoles(h.sort((a, b) => a.hole_number - b.hole_number)))
   }, [activeCourseId, courses])
 
+  useEffect(() => {
+    setPrizeMoney(activeCompetition?.prize_money ?? '')
+  }, [activeCompetition?.id, activeCompetition?.prize_money])
+
   async function saveName() {
     await updateCourseName(activeCourseId, name)
     setCourses((prev) => prev.map((c) => (c.id === activeCourseId ? { ...c, name } : c)))
+    onSave()
+  }
+
+  async function savePrizeMoney() {
+    if (!activeCompetition) return
+    const amount = prizeMoney === '' ? null : Number(prizeMoney)
+    await updateCompetitionPrize(activeCompetition.id, amount)
+    setCompetitions((prev) => prev.map((c) => (c.id === activeCompetition.id ? { ...c, prize_money: amount } : c)))
     onSave()
   }
 
@@ -253,6 +294,24 @@ function CoursesTab({ onSave }) {
         <div className="field">
           <label>Course name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} onBlur={saveName} placeholder="e.g. Rosapenna" />
+        </div>
+
+        <div className="field">
+          <label>Prize money (€)</label>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            value={prizeMoney}
+            onChange={(e) => setPrizeMoney(e.target.value)}
+            onBlur={savePrizeMoney}
+            placeholder="e.g. 100"
+          />
+          {activeIndex === 1 && (
+            <div className="entrant-points" style={{ marginTop: -2 }}>
+              Shown as €{prizeMoney || '0'}pp on the Day 2 card
+            </div>
+          )}
         </div>
 
         <div className="field">

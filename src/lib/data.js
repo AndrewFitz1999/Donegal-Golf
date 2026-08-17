@@ -109,6 +109,17 @@ export async function getCompetition(day) {
   return data
 }
 
+export async function getCompetitions() {
+  const { data, error } = await supabase.from('competitions').select('*').order('day')
+  if (error) throw error
+  return data
+}
+
+export async function updateCompetitionPrize(competitionId, prizeMoney) {
+  const { error } = await supabase.from('competitions').update({ prize_money: prizeMoney }).eq('id', competitionId)
+  if (error) throw error
+}
+
 export async function getScores(competitionId) {
   const { data, error } = await supabase
     .from('scores')
