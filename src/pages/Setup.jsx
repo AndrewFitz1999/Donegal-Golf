@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import TopBar from '../components/TopBar.jsx'
+import Avatar from '../components/Avatar.jsx'
 import {
   getCourses,
   getHoles,
@@ -7,9 +8,11 @@ import {
   updateHole,
   getPlayers,
   updatePlayer,
+  uploadPlayerPhoto,
   getTeams,
   upsertTeam,
 } from '../lib/data'
+import { resizeImageFile } from '../lib/image'
 
 const TABS = ['Courses', 'Players', 'Teams']
 
@@ -141,6 +144,7 @@ function CoursesTab({ onSave }) {
 function PlayersTab({ onSave }) {
   const [players, setPlayers] = useState([])
   const [status, setStatus] = useState('loading')
+  const [uploadingId, setUploadingId] = useState(null)
 
   useEffect(() => {
     getPlayers()
@@ -160,6 +164,21 @@ function PlayersTab({ onSave }) {
     onSave()
   }
 
+  async function handlePhotoChange(id, file) {
+    if (!file) return
+    setUploadingId(id)
+    try {
+      const resized = await resizeImageFile(file)
+      const photoUrl = await uploadPlayerPhoto(id, resized)
+      setPlayers((prev) => prev.map((x) => (x.id === id ? { ...x, photo_url: photoUrl } : x)))
+      onSave()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUploadingId(null)
+    }
+  }
+
   if (status === 'loading') return <div className="state-message">Loading players…</div>
   if (status === 'error') return <div className="state-message">Couldn't load players. Check your connection.</div>
 
@@ -167,6 +186,18 @@ function PlayersTab({ onSave }) {
     <div className="card">
       {players.map((p) => (
         <div className="player-row" key={p.id}>
+          <div className="photo-picker">
+            <label className="photo-picker-btn">
+              <Avatar src={p.photo_url} name={p.name} size={52} />
+              <span className="photo-picker-badge">{uploadingId === p.id ? '…' : '+'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingId === p.id}
+                onChange={(e) => handlePhotoChange(p.id, e.target.files?.[0])}
+              />
+            </label>
+          </div>
           <div className="field player-row-name">
             <label>Name</label>
             <input

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import TopBar from '../components/TopBar.jsx'
+import Avatar, { AvatarPair } from '../components/Avatar.jsx'
 import { getCompetition, getHoles, getScores, subscribeToScores } from '../lib/data'
 import { loadEntrants } from '../lib/entrants'
 import { stablefordPoints } from '../lib/scoring'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
-export default function DayLeaderboard() {
+const DAY_LABEL = { 1: 'Saturday', 2: 'Sunday' }
+
+export default function Dashboard() {
   const { day } = useParams()
   const [state, setState] = useState({ status: 'loading', rows: [] })
   const [competition, setCompetition] = useState(null)
@@ -40,19 +42,38 @@ export default function DayLeaderboard() {
 
   usePullToRefresh(load)
 
-  const dayLabel = day === '1' ? 'Saturday' : 'Sunday'
-  const compType = competition?.type === 'scramble_stableford' ? 'Scramble Stableford' : 'Singles Stableford'
+  const type = competition?.type || (day === '2' ? 'scramble_stableford' : 'singles_stableford')
+  const compType = type === 'scramble_stableford' ? 'Scramble Stableford' : 'Singles Stableford'
 
   return (
     <div className="app-shell">
-      <TopBar title={`Day ${day} Leaderboard`} subtitle={`${dayLabel} · ${competition?.courses?.name || ''}`} />
-
-      <div className="section" style={{ marginTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span className="live-dot">Live</span>
-          <span style={{ fontSize: 13, color: 'var(--ink-500)' }}>{compType}</span>
+      <div className="dashboard-header">
+        <div>
+          <div className="dashboard-kicker">Donegal Golf Weekend</div>
+          <h1 className="dashboard-title">Leaderboard</h1>
         </div>
+        <Link to="/setup" className="dashboard-setup-link" aria-label="Setup">
+          ⚙
+        </Link>
+      </div>
 
+      <div className="tabs dashboard-tabs">
+        {[1, 2].map((d) => (
+          <Link key={d} to={`/day/${d}`} className={`tab-btn${String(d) === day ? ' is-active' : ''}`}>
+            Day {d} · {DAY_LABEL[d]}
+          </Link>
+        ))}
+      </div>
+
+      <div className="dashboard-meta">
+        <div>
+          <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
+          <div className="dashboard-comp-type">{compType}</div>
+        </div>
+        <span className="live-dot">Live</span>
+      </div>
+
+      <div className="page-content">
         {state.status === 'loading' && <div className="state-message">Loading leaderboard…</div>}
 
         {state.status === 'error' && (
@@ -71,6 +92,11 @@ export default function DayLeaderboard() {
             {state.rows.map((row, i) => (
               <div key={row.id} className={`leaderboard-row${i === 0 && row.points > 0 ? ' is-leader' : ''}`}>
                 <div className="leaderboard-rank">{i + 1}</div>
+                {row.photoUrls ? (
+                  <AvatarPair names={row.names} srcs={row.photoUrls} size={38} />
+                ) : (
+                  <Avatar src={row.photoUrl} name={row.name} size={44} />
+                )}
                 <div className="leaderboard-name">
                   <div className="leaderboard-name-text">{row.name}</div>
                   <div className="leaderboard-thru">{row.thru === 0 ? 'Not started' : row.thru === 18 ? 'Final' : `Thru ${row.thru}`}</div>
@@ -87,10 +113,12 @@ export default function DayLeaderboard() {
         <div className="pull-refresh-hint">Pull down to refresh</div>
       </div>
 
-      <div className="section">
-        <Link to={`/day/${day}/score`} className="btn btn-primary">
-          Enter scores
-        </Link>
+      <div className="action-bar">
+        <div className="action-bar-inner">
+          <Link to={`/day/${day}/score`} className="btn btn-primary">
+            Enter Score
+          </Link>
+        </div>
       </div>
     </div>
   )
@@ -115,7 +143,15 @@ function buildRows(entrants, holes, scores) {
       thru += 1
       points += stablefordPoints(s.gross_strokes, hole.par, hole.stroke_index, entrant.handicap) || 0
     }
-    return { id: entrant.id, name: entrant.name, points, thru }
+    return {
+      id: entrant.id,
+      name: entrant.name,
+      points,
+      thru,
+      photoUrl: entrant.photoUrl,
+      photoUrls: entrant.photoUrls,
+      names: entrant.names,
+    }
   })
 
   rows.sort((a, b) => b.points - a.points || b.thru - a.thru)

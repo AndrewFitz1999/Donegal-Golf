@@ -2,11 +2,16 @@ import { getPlayers, getTeams } from './data'
 import { teamHandicap } from './scoring'
 
 // Normalizes Day 1 players and Day 2 teams into a common shape:
-// { id, name, handicap }
+// { id, name, handicap, photoUrl, photoUrls }
 export async function loadEntrants(day) {
   if (Number(day) === 1) {
     const players = await getPlayers()
-    return players.map((p) => ({ id: p.id, name: p.name || 'Player', handicap: Number(p.handicap_index) }))
+    return players.map((p) => ({
+      id: p.id,
+      name: p.name || 'Player',
+      handicap: Number(p.handicap_index),
+      photoUrl: p.photo_url || null,
+    }))
   }
 
   const [teams, players] = await Promise.all([getTeams(), getPlayers()])
@@ -19,6 +24,8 @@ export async function loadEntrants(day) {
       id: t.id,
       name: t.name || names || 'Team',
       handicap: a && b ? teamHandicap(a.handicap_index, b.handicap_index) : 0,
+      photoUrls: [a?.photo_url || null, b?.photo_url || null],
+      names: [a?.name, b?.name],
     }
   })
 }

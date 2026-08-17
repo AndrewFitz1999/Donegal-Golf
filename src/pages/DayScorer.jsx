@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import TopBar from '../components/TopBar.jsx'
+import Avatar, { AvatarPair } from '../components/Avatar.jsx'
 import { getCompetition, getHoles, getScores, upsertScore, subscribeToScores } from '../lib/data'
 import { loadEntrants } from '../lib/entrants'
 import { stablefordPoints } from '../lib/scoring'
 
 export default function DayScorer() {
   const { day } = useParams()
+  const navigate = useNavigate()
   const [competition, setCompetition] = useState(null)
   const [holes, setHoles] = useState([])
   const [entrants, setEntrants] = useState([])
@@ -75,6 +77,8 @@ export default function DayScorer() {
     return filled
   }, [holes, entrants, scoresByEntrantHole])
 
+  const allFilledCurrentHole = filledHoles.has(hole)
+
   async function setGross(entrant, delta) {
     if (!currentHole) return
     const key = `${entrant.id}-${hole}`
@@ -111,18 +115,14 @@ export default function DayScorer() {
     } catch (err) {
       console.error(err)
     }
-
-    maybeAutoAdvance(entrant.id, nextValue)
   }
 
-  function maybeAutoAdvance(justSetEntrantId, justSetValue) {
-    if (hole >= 18) return
-    const allDone = entrants.every((e) => {
-      if (e.id === justSetEntrantId) return justSetValue != null
-      return scoresByEntrantHole[`${e.id}-${hole}`]?.gross_strokes != null
-    })
-    if (allDone) {
-      setTimeout(() => setHole((h) => Math.min(18, h + 1)), 450)
+  function confirmAndAdvance() {
+    if (!allFilledCurrentHole) return
+    if (hole >= 18) {
+      navigate(`/day/${day}`)
+    } else {
+      setHole((h) => Math.min(18, h + 1))
     }
   }
 
@@ -155,69 +155,86 @@ export default function DayScorer() {
     <div className="app-shell">
       <TopBar title={`Day ${day} Scoring`} subtitle={competition?.courses?.name} backTo={`/day/${day}`} />
 
-      <div className="hole-nav">
-        <button className="hole-nav-btn" onClick={() => setHole((h) => Math.max(1, h - 1))} disabled={hole <= 1} aria-label="Previous hole">
-          ‹
-        </button>
-        <div className="hole-card">
-          <div>
-            <div className="hole-card-label">Hole</div>
-            <div className="hole-card-num">{hole}</div>
-          </div>
-          <div className="hole-card-stats">
-            <div>
-              <div className="hole-card-label">Par</div>
-              <div className="hole-card-stat-val">{currentHole?.par ?? '–'}</div>
-            </div>
-            <div>
-              <div className="hole-card-label">S.I.</div>
-              <div className="hole-card-stat-val">{currentHole?.stroke_index ?? '–'}</div>
-            </div>
-          </div>
-        </div>
-        <button className="hole-nav-btn" onClick={() => setHole((h) => Math.min(18, h + 1))} disabled={hole >= 18} aria-label="Next hole">
-          ›
-        </button>
-      </div>
-
-      <div className="hole-picker">
-        {holes.map((h) => (
-          <button
-            key={h.hole_number}
-            className={`hole-picker-btn${h.hole_number === hole ? ' is-active' : ''}${filledHoles.has(h.hole_number) ? ' is-filled' : ''}`}
-            onClick={() => setHole(h.hole_number)}
-          >
-            {h.hole_number}
+      <div className="page-content">
+        <div className="hole-nav">
+          <button className="hole-nav-btn" onClick={() => setHole((h) => Math.max(1, h - 1))} disabled={hole <= 1} aria-label="Previous hole">
+            ‹
           </button>
-        ))}
-      </div>
+          <div className="hole-card">
+            <div>
+              <div className="hole-card-label">Hole</div>
+              <div className="hole-card-num">{hole}</div>
+            </div>
+            <div className="hole-card-stats">
+              <div>
+                <div className="hole-card-label">Par</div>
+                <div className="hole-card-stat-val">{currentHole?.par ?? '–'}</div>
+              </div>
+              <div>
+                <div className="hole-card-label">S.I.</div>
+                <div className="hole-card-stat-val">{currentHole?.stroke_index ?? '–'}</div>
+              </div>
+            </div>
+          </div>
+          <button className="hole-nav-btn" onClick={() => setHole((h) => Math.min(18, h + 1))} disabled={hole >= 18} aria-label="Next hole">
+            ›
+          </button>
+        </div>
 
-      <div className="entrant-rows">
-        {entrants.map((entrant) => {
-          const row = scoresByEntrantHole[`${entrant.id}-${hole}`]
-          const value = row?.gross_strokes ?? null
-          const points = row?.stableford_points
+        <div className="hole-picker">
+          {holes.map((h) => (
+            <button
+              key={h.hole_number}
+              className={`hole-picker-btn${h.hole_number === hole ? ' is-active' : ''}${filledHoles.has(h.hole_number) ? ' is-filled' : ''}`}
+              onClick={() => setHole(h.hole_number)}
+            >
+              {h.hole_number}
+            </button>
+          ))}
+        </div>
 
-          return (
-            <div className="entrant-row" key={entrant.id}>
-              <div className="entrant-info">
-                <div className="entrant-name">{entrant.name}</div>
-                <div className="entrant-points">
-                  {value == null ? `Hcp ${entrant.handicap}` : `${points} pt${points === 1 ? '' : 's'} this hole`}
+        <div className="entrant-rows">
+          {entrants.map((entrant) => {
+            const row = scoresByEntrantHole[`${entrant.id}-${hole}`]
+            const value = row?.gross_strokes ?? null
+            const points = row?.stableford_points
+
+            return (
+              <div className="entrant-row" key={entrant.id}>
+                {entrant.photoUrls ? (
+                  <AvatarPair names={entrant.names} srcs={entrant.photoUrls} size={40} />
+                ) : (
+                  <Avatar src={entrant.photoUrl} name={entrant.name} size={44} />
+                )}
+                <div className="entrant-info">
+                  <div className="entrant-name">{entrant.name}</div>
+                  <div className="entrant-points">
+                    {value == null ? `Hcp ${entrant.handicap}` : `${points} pt${points === 1 ? '' : 's'} this hole`}
+                  </div>
+                </div>
+                <div className="stepper">
+                  <button className="stepper-btn" onClick={() => setGross(entrant, -1)} aria-label={`Decrease ${entrant.name} score`}>
+                    −
+                  </button>
+                  <div className={`stepper-value${value == null ? ' is-empty' : ''}`}>{value ?? 'Tap +'}</div>
+                  <button className="stepper-btn" onClick={() => setGross(entrant, 1)} aria-label={`Increase ${entrant.name} score`}>
+                    +
+                  </button>
                 </div>
               </div>
-              <div className="stepper">
-                <button className="stepper-btn" onClick={() => setGross(entrant, -1)} aria-label={`Decrease ${entrant.name} score`}>
-                  −
-                </button>
-                <div className={`stepper-value${value == null ? ' is-empty' : ''}`}>{value ?? 'Tap +'}</div>
-                <button className="stepper-btn" onClick={() => setGross(entrant, 1)} aria-label={`Increase ${entrant.name} score`}>
-                  +
-                </button>
-              </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
+
+        {!allFilledCurrentHole && <div className="confirm-hint">Enter a score for everyone to continue</div>}
+      </div>
+
+      <div className="action-bar">
+        <div className="action-bar-inner">
+          <button className="btn btn-primary" disabled={!allFilledCurrentHole} onClick={confirmAndAdvance}>
+            {hole >= 18 ? 'Confirm scores & finish' : 'Confirm scores & next hole'}
+          </button>
+        </div>
       </div>
     </div>
   )

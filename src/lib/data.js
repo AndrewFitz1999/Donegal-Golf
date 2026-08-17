@@ -37,6 +37,18 @@ export async function updatePlayer(playerId, fields) {
   if (error) throw error
 }
 
+export async function uploadPlayerPhoto(playerId, blob) {
+  const path = `players/${playerId}-${Date.now()}.jpg`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  await updatePlayer(playerId, { photo_url: data.publicUrl })
+  return data.publicUrl
+}
+
 export async function getTeams() {
   const { data, error } = await supabase.from('teams').select('*').order('created_at')
   if (error) throw error

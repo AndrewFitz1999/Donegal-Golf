@@ -1,15 +1,14 @@
-import { Routes, Route } from 'react-router-dom'
-import Landing from './pages/Landing.jsx'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Setup from './pages/Setup.jsx'
-import DayLeaderboard from './pages/DayLeaderboard.jsx'
+import Dashboard from './pages/Dashboard.jsx'
 import DayScorer from './pages/DayScorer.jsx'
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<Navigate to="/day/1" replace />} />
       <Route path="/setup" element={<Setup />} />
-      <Route path="/day/:day" element={<DayLeaderboard />} />
+      <Route path="/day/:day" element={<Dashboard />} />
       <Route path="/day/:day/score" element={<DayScorer />} />
     </Routes>
   )
