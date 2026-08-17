@@ -780,9 +780,9 @@ select {
 .trip-hero {
   position: relative;
   margin: 0 -20px;
-  height: 46vh;
-  min-height: 280px;
-  max-height: 480px;
+  height: 18vh;
+  min-height: 110px;
+  max-height: 160px;
   background: linear-gradient(155deg, var(--green-800), var(--green-950));
   background-size: cover;
   background-position: center;
@@ -801,20 +801,20 @@ select {
 .trip-hero-content {
   position: relative;
   z-index: 1;
-  padding: 0 24px 28px;
+  padding: 0 20px 16px;
 }
 
 .trip-hero-title {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--cream-50);
   line-height: 1.1;
 }
 
 .trip-hero-subtitle {
-  margin-top: 8px;
-  font-size: 15px;
+  margin-top: 4px;
+  font-size: 13px;
   font-weight: 600;
   color: rgba(250, 248, 242, 0.85);
   letter-spacing: 0.02em;
@@ -1055,4 +1055,69 @@ select {
   font-weight: 700;
   color: var(--ink-900);
   margin-top: 2px;
+}
+
+/* Photo crop modal */
+.crop-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 20, 15, 0.72);
+}
+
+.crop-modal-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-card);
+}
+
+.crop-modal-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin-bottom: 14px;
+}
+
+.crop-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--ink-900);
+  touch-action: none;
+  cursor: grab;
+  margin: 0 auto;
+}
+
+.crop-frame img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.crop-zoom {
+  width: 100%;
+  margin-top: 14px;
+  accent-color: var(--green-700);
+}
+
+.crop-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.crop-modal-actions .btn {
+  width: auto;
+  flex: 1;
 }

@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import TopBar from '../components/TopBar.jsx'
 import Avatar from '../components/Avatar.jsx'
+import PhotoCropModal from '../components/PhotoCropModal.jsx'
 import {
   getCourses,
   getHoles,
@@ -21,6 +22,9 @@ import {
 import { resizeImageFile } from '../lib/image'
 
 const TABS = ['Trip', 'Courses', 'Players', 'Teams']
+// Banner photos (trip hero, course background) are wide and short — crop to
+// a consistent aspect so the pan/zoom preview matches how they actually render.
+const BANNER_ASPECT = 3
 
 export default function Setup() {
   const [tab, setTab] = useState('Courses')
@@ -62,6 +66,7 @@ function TripTab({ onSave }) {
   const [subtitle, setSubtitle] = useState('')
   const [status, setStatus] = useState('loading')
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [cropFile, setCropFile] = useState(null)
   const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
@@ -84,12 +89,12 @@ function TripTab({ onSave }) {
     onSave()
   }
 
-  async function handlePhotoChange(file) {
-    if (!file || !event) return
+  async function handleCropConfirm(blob) {
+    setCropFile(null)
+    if (!event) return
     setUploadingPhoto(true)
     try {
-      const resized = await resizeImageFile(file, { maxDim: 1600, quality: 0.85 })
-      const photoUrl = await uploadEventHeroPhoto(event.id, resized)
+      const photoUrl = await uploadEventHeroPhoto(event.id, blob)
       setEvent((prev) => ({ ...prev, hero_photo_url: photoUrl }))
       onSave()
     } catch (err) {
@@ -138,10 +143,20 @@ function TripTab({ onSave }) {
             <span className={`course-photo-label${event?.hero_photo_url ? ' has-photo' : ''}`}>
               {uploadingPhoto ? 'Uploading…' : event?.hero_photo_url ? 'Change photo' : 'Add a hero photo'}
             </span>
-            <input type="file" accept="image/*" disabled={uploadingPhoto} onChange={(e) => handlePhotoChange(e.target.files?.[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploadingPhoto}
+              onChange={(e) => {
+                setCropFile(e.target.files?.[0] || null)
+                e.target.value = ''
+              }}
+            />
           </label>
         </div>
       </div>
+
+      {cropFile && <PhotoCropModal file={cropFile} aspect={BANNER_ASPECT} onCancel={() => setCropFile(null)} onConfirm={handleCropConfirm} />}
 
       <div className="section">
         <div className="section-title">Danger zone</div>
@@ -165,6 +180,7 @@ function CoursesTab({ onSave }) {
   const [name, setName] = useState('')
   const [status, setStatus] = useState('loading')
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [cropFile, setCropFile] = useState(null)
 
   useEffect(() => {
     getCourses()
@@ -199,12 +215,12 @@ function CoursesTab({ onSave }) {
     onSave()
   }
 
-  async function handlePhotoChange(file) {
-    if (!file || !activeCourseId) return
+  async function handleCropConfirm(blob) {
+    setCropFile(null)
+    if (!activeCourseId) return
     setUploadingPhoto(true)
     try {
-      const resized = await resizeImageFile(file, { maxDim: 1600, quality: 0.85 })
-      const photoUrl = await uploadCoursePhoto(activeCourseId, resized)
+      const photoUrl = await uploadCoursePhoto(activeCourseId, blob)
       setCourses((prev) => prev.map((c) => (c.id === activeCourseId ? { ...c, photo_url: photoUrl } : c)))
       onSave()
     } catch (err) {
@@ -251,9 +267,19 @@ function CoursesTab({ onSave }) {
             <span className={`course-photo-label${activeCourse?.photo_url ? ' has-photo' : ''}`}>
               {uploadingPhoto ? 'Uploading…' : activeCourse?.photo_url ? 'Change photo' : 'Add a photo of the course'}
             </span>
-            <input type="file" accept="image/*" disabled={uploadingPhoto} onChange={(e) => handlePhotoChange(e.target.files?.[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploadingPhoto}
+              onChange={(e) => {
+                setCropFile(e.target.files?.[0] || null)
+                e.target.value = ''
+              }}
+            />
           </label>
         </div>
+
+        {cropFile && <PhotoCropModal file={cropFile} aspect={BANNER_ASPECT} onCancel={() => setCropFile(null)} onConfirm={handleCropConfirm} />}
 
         <div className="holes-grid">
           <div className="holes-grid-head">Hole</div>
