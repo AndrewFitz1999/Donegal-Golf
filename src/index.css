@@ -800,9 +800,12 @@ select {
 .trip-hero {
   position: relative;
   margin: 0 -20px;
-  height: 18vh;
-  min-height: 110px;
-  max-height: 160px;
+  /* Grows by the notch/Dynamic Island inset (0 outside standalone mode) so
+     that extra space is new room for the photo, not a bite taken out of it
+     — otherwise the top of the photo ends up hidden behind the status bar. */
+  height: calc(18vh + env(safe-area-inset-top));
+  min-height: calc(110px + env(safe-area-inset-top));
+  max-height: calc(160px + env(safe-area-inset-top));
   background: linear-gradient(155deg, var(--green-800), var(--green-950));
   background-size: cover;
   background-position: center;
@@ -815,6 +818,16 @@ select {
   position: absolute;
   inset: 0;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.55) 70%);
+}
+
+.trip-hero-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 14px;
+  background: linear-gradient(to bottom, transparent, var(--cream-50));
+  pointer-events: none;
 }
 
 .trip-hero-content {
@@ -855,7 +868,11 @@ select {
 }
 
 .trip-hero-no-image .trip-hero-content {
-  padding: 20px 20px 18px;
+  padding: calc(20px + env(safe-area-inset-top)) 20px 18px;
+}
+
+.trip-hero-no-image .trip-hero-fade {
+  display: none;
 }
 
 .trip-hero-no-image .trip-hero-title {
@@ -870,13 +887,16 @@ select {
 /* Dashboard (home) */
 .dashboard-tabbar {
   position: sticky;
-  top: 0;
+  /* Sticks just below the notch/status bar, not at the very top of the
+     viewport — unlike .topbar this isn't the first thing on the page, so
+     baking the inset into padding-top would add dead space every time it's
+     rendered in normal flow (right after the hero), not just once pinned. */
+  top: env(safe-area-inset-top);
   z-index: 15;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 4px;
-  padding-top: calc(14px + env(safe-area-inset-top));
   margin: 0 -20px;
   padding-left: 20px;
   padding-right: 20px;

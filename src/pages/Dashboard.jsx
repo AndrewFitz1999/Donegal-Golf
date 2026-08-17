@@ -101,6 +101,7 @@ export default function Dashboard() {
           <div className="trip-hero-title">{event?.title || 'Golf Weekend'}</div>
           {event?.subtitle && <div className="trip-hero-subtitle">{event.subtitle}</div>}
         </div>
+        <div className="trip-hero-fade" />
       </div>
 
       <div className="dashboard-tabbar">
