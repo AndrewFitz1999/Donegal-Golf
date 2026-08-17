@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { EntrantAvatar } from '../components/Avatar.jsx'
-import { getCompetition, getHoles, getScores, subscribeToScores } from '../lib/data'
+import { getCompetition, getHoles, getScores, getEventSettings, subscribeToScores } from '../lib/data'
 import { loadEntrants } from '../lib/entrants'
 import { stablefordPoints } from '../lib/scoring'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 const DAY_LABEL = { 1: 'Friday', 2: 'Saturday' }
 
@@ -12,16 +11,19 @@ export default function Dashboard() {
   const { day } = useParams()
   const [state, setState] = useState({ status: 'loading', rows: [] })
   const [competition, setCompetition] = useState(null)
+  const [event, setEvent] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   const load = useCallback(async () => {
     try {
-      const comp = await getCompetition(day)
+      const [comp, evt] = await Promise.all([getCompetition(day), getEventSettings()])
       const [holes, entrants, scores] = await Promise.all([
         getHoles(comp.course_id),
         loadEntrants(day),
         getScores(comp.id),
       ])
       setCompetition(comp)
+      setEvent(evt)
       setState({ status: 'ready', rows: buildRows(entrants, holes, scores) })
     } catch (err) {
       console.error(err)
@@ -40,7 +42,11 @@ export default function Dashboard() {
     return unsubscribe
   }, [competition, load])
 
-  usePullToRefresh(load)
+  async function refresh() {
+    setRefreshing(true)
+    await load()
+    setRefreshing(false)
+  }
 
   const type = competition?.type || (day === '2' ? 'scramble_stableford' : 'singles_stableford')
   const compType = type === 'scramble_stableford' ? 'Scramble Stableford' : 'Singles Stableford'
@@ -49,6 +55,14 @@ export default function Dashboard() {
 
   return (
     <div className="app-shell">
+      <div className="trip-hero" style={event?.hero_photo_url ? { backgroundImage: `url(${event.hero_photo_url})` } : undefined}>
+        <div className="trip-hero-scrim" />
+        <div className="trip-hero-content">
+          <div className="trip-hero-title">{event?.title || 'Golf Weekend'}</div>
+          {event?.subtitle && <div className="trip-hero-subtitle">{event.subtitle}</div>}
+        </div>
+      </div>
+
       <div className="dashboard-tabbar">
         <div className="tabs dashboard-tabs">
           {[1, 2].map((d) => (
@@ -73,7 +87,9 @@ export default function Dashboard() {
               <div className="dashboard-course">{competition?.courses?.name || `Day ${day} Course`}</div>
               <div className="dashboard-comp-type">{compType}</div>
             </div>
-            <span className="live-dot">Live</span>
+            <button className="live-dot refresh-btn" onClick={refresh} disabled={refreshing} aria-label="Refresh">
+              {refreshing ? 'Refreshing…' : 'Live · Refresh'}
+            </button>
           </div>
         </div>
       </div>
@@ -115,8 +131,6 @@ export default function Dashboard() {
             ))}
           </div>
         )}
-
-        <div className="pull-refresh-hint">Pull down to refresh</div>
       </div>
 
       <div className="action-bar">

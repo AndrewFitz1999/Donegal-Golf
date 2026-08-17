@@ -20,16 +20,18 @@ src/
     scoring.js     Stableford points + strokes-received logic (pure functions)
     image.js       Client-side photo downscale before upload
   pages/
-    Dashboard.jsx  Root dashboard: Day 1/Day 2 tabs + that day's live leaderboard + Enter Score
-    Setup.jsx      Courses, players (incl. photos), teams (names + photos, one-time setup)
+    Dashboard.jsx  Trip hero + Day 1/Day 2 tabs + that day's live leaderboard + Enter Score
+    Setup.jsx      Trip hero/title, courses, players (incl. photos), teams (names + photos)
     DayScorer.jsx  Hole-by-hole score entry, per day, with confirm-to-advance
     Scorecard.jsx  Full 18-hole scorecard for one player/team, per day
   components/
     TopBar.jsx
     Avatar.jsx     Player/team avatar with initials fallback (incl. EntrantAvatar helper)
-  hooks/
-    usePullToRefresh.js
 ```
+
+`vercel.json` rewrites every path to `index.html` so client-side routes (e.g.
+`/day/2`) work on a hard reload or direct link — without it Vercel 404s on
+anything but `/`.
 
 Day 1 and Day 2 are fully separate — the Dashboard shows one day's leaderboard
 at a time via tabs, never a combined view. Setup (courses, players, handicaps,
@@ -93,7 +95,15 @@ before the weekend.
 
 - Score entry writes optimistically to the UI, then to Supabase; the
   leaderboard subscribes to `scores` changes over Supabase Realtime and
-  recomputes on every insert/update, with pull-to-refresh as a fallback.
+  recomputes on every insert/update. A "Live · Refresh" button is a manual
+  fallback — deliberately not a pull-down gesture, since iOS Safari's own
+  pull-to-refresh can't be reliably suppressed from a web page and would
+  otherwise fight with a custom one.
+- Setup → Trip lets you set the trip title/dates and a full-bleed hero photo
+  shown at the very top of the dashboard; it scrolls away naturally to reveal
+  the sticky day-tab bar and leaderboard beneath it. Also home to "Clear all
+  scores" (confirm-gated) for wiping every score across both days without
+  touching courses/players/teams/handicaps.
 - The scorer requires every entrant to have a score entered for the current
   hole before "Confirm scores & next hole" is enabled, to avoid skipping
   someone by mistake. The hole picker still allows jumping to any hole to

@@ -125,6 +125,35 @@ export async function upsertScore(row) {
   if (error) throw error
 }
 
+export async function clearAllScores() {
+  const { error } = await supabase.from('scores').delete().not('id', 'is', null)
+  if (error) throw error
+}
+
+export async function getEventSettings() {
+  const { data, error } = await supabase.from('event_settings').select('*').limit(1).single()
+  if (error) throw error
+  return data
+}
+
+export async function updateEventSettings(id, fields) {
+  const { error } = await supabase.from('event_settings').update(fields).eq('id', id)
+  if (error) throw error
+}
+
+export async function uploadEventHeroPhoto(eventId, blob) {
+  const path = `event/${eventId}-${Date.now()}.jpg`
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const { error } = await supabase.from('event_settings').update({ hero_photo_url: data.publicUrl }).eq('id', eventId)
+  if (error) throw error
+  return data.publicUrl
+}
+
 export function subscribeToScores(competitionId, onChange) {
   const channel = supabase
     .channel(`scores-${competitionId}`)

@@ -13,10 +13,14 @@ import {
   getTeams,
   upsertTeam,
   uploadTeamPhoto,
+  getEventSettings,
+  updateEventSettings,
+  uploadEventHeroPhoto,
+  clearAllScores,
 } from '../lib/data'
 import { resizeImageFile } from '../lib/image'
 
-const TABS = ['Courses', 'Players', 'Teams']
+const TABS = ['Trip', 'Courses', 'Players', 'Teams']
 
 export default function Setup() {
   const [tab, setTab] = useState('Courses')
@@ -41,12 +45,115 @@ export default function Setup() {
       </div>
 
       <div className="section">
+        {tab === 'Trip' && <TripTab onSave={() => flash('Saved')} />}
         {tab === 'Courses' && <CoursesTab onSave={() => flash('Saved')} />}
         {tab === 'Players' && <PlayersTab onSave={() => flash('Saved')} />}
         {tab === 'Teams' && <TeamsTab onSave={() => flash('Saved')} />}
       </div>
 
       {toast && <div className="save-toast">{toast}</div>}
+    </div>
+  )
+}
+
+function TripTab({ onSave }) {
+  const [event, setEvent] = useState(null)
+  const [title, setTitle] = useState('')
+  const [subtitle, setSubtitle] = useState('')
+  const [status, setStatus] = useState('loading')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [clearing, setClearing] = useState(false)
+
+  useEffect(() => {
+    getEventSettings()
+      .then((e) => {
+        setEvent(e)
+        setTitle(e.title || '')
+        setSubtitle(e.subtitle || '')
+        setStatus('ready')
+      })
+      .catch((err) => {
+        console.error(err)
+        setStatus('error')
+      })
+  }, [])
+
+  async function saveField(field, value) {
+    await updateEventSettings(event.id, { [field]: value })
+    setEvent((prev) => ({ ...prev, [field]: value }))
+    onSave()
+  }
+
+  async function handlePhotoChange(file) {
+    if (!file || !event) return
+    setUploadingPhoto(true)
+    try {
+      const resized = await resizeImageFile(file, { maxDim: 1600, quality: 0.85 })
+      const photoUrl = await uploadEventHeroPhoto(event.id, resized)
+      setEvent((prev) => ({ ...prev, hero_photo_url: photoUrl }))
+      onSave()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  async function handleClearScores() {
+    if (!window.confirm('Clear every score entered for both days? This cannot be undone.')) return
+    setClearing(true)
+    try {
+      await clearAllScores()
+      onSave()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setClearing(false)
+    }
+  }
+
+  if (status === 'loading') return <div className="state-message">Loading trip settings…</div>
+  if (status === 'error') return <div className="state-message">Couldn't load trip settings. Check your connection.</div>
+
+  return (
+    <div>
+      <div className="card">
+        <div className="field">
+          <label>Trip title</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={(e) => saveField('title', e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Dates</label>
+          <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} onBlur={(e) => saveField('subtitle', e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Hero photo</label>
+          <label className="course-photo-picker">
+            {event?.hero_photo_url && (
+              <>
+                <img src={event.hero_photo_url} alt="" />
+                <div className="course-photo-scrim" />
+              </>
+            )}
+            <span className={`course-photo-label${event?.hero_photo_url ? ' has-photo' : ''}`}>
+              {uploadingPhoto ? 'Uploading…' : event?.hero_photo_url ? 'Change photo' : 'Add a hero photo'}
+            </span>
+            <input type="file" accept="image/*" disabled={uploadingPhoto} onChange={(e) => handlePhotoChange(e.target.files?.[0])} />
+          </label>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-title">Danger zone</div>
+        <div className="card">
+          <p style={{ fontSize: 13.5, color: 'var(--ink-500)', margin: '0 0 14px' }}>
+            Wipes every score entered for both days. Courses, players, teams and handicaps are untouched.
+          </p>
+          <button className="btn btn-danger" onClick={handleClearScores} disabled={clearing}>
+            {clearing ? 'Clearing…' : 'Clear all scores'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
