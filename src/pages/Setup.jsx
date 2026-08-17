@@ -163,7 +163,7 @@ function TripTab({ onSave }) {
             checked={!event?.hero_hidden}
             onChange={(e) => saveField('hero_hidden', !e.target.checked)}
           />
-          Show hero banner on the dashboard
+          Show hero photo on the dashboard (title/dates stay either way)
         </label>
       </div>
 

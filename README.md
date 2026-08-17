@@ -111,12 +111,16 @@ before the weekend.
   fallback — deliberately not a pull-down gesture, since iOS Safari's own
   pull-to-refresh can't be reliably suppressed from a web page and would
   otherwise fight with a custom one.
-- Setup → Trip lets you set the trip title/dates and a short full-bleed hero
-  banner shown at the top of the dashboard (plain scroll, no snap/animation)
-  above the sticky day-tab bar and leaderboard, with a toggle to hide it
-  entirely. Trip also holds the "Enter Day 1/2 Scores" links (there's no
-  score-entry button on the dashboard itself anymore) and "Clear all scores"
-  (confirm-gated) for wiping every score across both days without touching
+- Setup → Trip lets you set the trip title/dates and a hero photo shown at
+  the top of the dashboard above the sticky day-tab bar and leaderboard.
+  Toggling the photo off (or just never uploading one) doesn't remove the
+  banner — the title/dates stay, the banner collapses to a compact plain
+  block instead of a tall empty one, and the text switches from white
+  serif-on-photo to black Inter-on-cream so it stays legible without the
+  photo/scrim behind it (`.trip-hero-no-image` in index.css). Trip also
+  holds the "Enter Day 1/2 Scores" links (there's no score-entry button on
+  the dashboard itself anymore) and "Clear all scores" (confirm-gated) for
+  wiping every score across both days without touching
   courses/players/teams/handicaps.
 - Each competition can have prize money (Setup → Courses, per day) shown as
   a gold badge on that day's dashboard card — Day 2's shows a "pp" (per

@@ -839,6 +839,34 @@ select {
   letter-spacing: 0.02em;
 }
 
+/* No photo set (or hidden): collapse to a compact plain header instead of
+   a tall block with nothing in it, and switch to dark text since there's
+   no dark scrim underneath to keep light text readable. */
+.trip-hero-no-image {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  background: var(--cream-100);
+  align-items: flex-start;
+}
+
+.trip-hero-no-image .trip-hero-scrim {
+  display: none;
+}
+
+.trip-hero-no-image .trip-hero-content {
+  padding: 20px 20px 18px;
+}
+
+.trip-hero-no-image .trip-hero-title {
+  font-family: var(--font-body);
+  color: var(--ink-900);
+}
+
+.trip-hero-no-image .trip-hero-subtitle {
+  color: var(--ink-500);
+}
+
 /* Dashboard (home) */
 .dashboard-tabbar {
   position: sticky;

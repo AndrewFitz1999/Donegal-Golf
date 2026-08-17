@@ -88,17 +88,20 @@ export default function Dashboard() {
     return () => clearTimeout(bgFadeTimer.current)
   }, [photoUrl, bgUrl])
 
+  const showTripPhoto = !event?.hero_hidden && event?.hero_photo_url
+
   return (
     <div className="app-shell">
-      {!event?.hero_hidden && (
-        <div className="trip-hero" style={event?.hero_photo_url ? { backgroundImage: `url(${event.hero_photo_url})` } : undefined}>
-          <div className="trip-hero-scrim" />
-          <div className="trip-hero-content">
-            <div className="trip-hero-title">{event?.title || 'Golf Weekend'}</div>
-            {event?.subtitle && <div className="trip-hero-subtitle">{event.subtitle}</div>}
-          </div>
+      <div
+        className={`trip-hero${showTripPhoto ? '' : ' trip-hero-no-image'}`}
+        style={showTripPhoto ? { backgroundImage: `url(${event.hero_photo_url})` } : undefined}
+      >
+        <div className="trip-hero-scrim" />
+        <div className="trip-hero-content">
+          <div className="trip-hero-title">{event?.title || 'Golf Weekend'}</div>
+          {event?.subtitle && <div className="trip-hero-subtitle">{event.subtitle}</div>}
         </div>
-      )}
+      </div>
 
       <div className="dashboard-tabbar">
         <div className="tabs dashboard-tabs">
